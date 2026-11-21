@@ -144,3 +144,12 @@ z dowodami i przypadkowo śledzone sekrety. ZIP sprawdzany jest przez CRC.
 
 Raporty 0.1 zachowano w `analysis/v0.1/`; identyfikują historyczny stan i nie
 są przedstawiane jako wynik kodu 0.2. Poprzednia paczka pozostaje odrębna.
+
+### Ponowna próba na CoreS3 K128 po publikacji 0.2.0
+
+Na fizycznym CoreS3 K128 obraz `cores3` z oryginalnego ZIP-u 0.2.0
+przeszedł weryfikację po zapisie, lecz restartował się przy inicjalizacji
+Octal PSRAM z identyfikatorem `0x00000000`. Błąd wystąpił także z bootloaderem
+ESP-IDF 5.4.2 z wydania. Działający wcześniej profil tej płytki używał Quad
+PSRAM. Profile CoreS3 wybierają teraz Quad. Kryterium próby na sprzęcie
+obejmuje wykrycie pamięci i uruchomienie aplikacji po resecie.
