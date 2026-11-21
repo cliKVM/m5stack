@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clikvm-node"
+version = "0.2.0"
+description = "Scoped native desktop, RFB and HTTP API executor for hey Asa / clikVM"
+requires-python = ">=3.11"
+dependencies = ["httpx==0.28.1", "Pillow==13.0.0", "jsonschema==4.26.0"]
+
+[project.optional-dependencies]
+native = ["mss==10.2.0", "PyAutoGUI==0.9.54"]
+rfb = ["pycryptodome==4.5.0"]
+
+[project.scripts]
+clikvm-node = "clikvm_node.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clikvm_node*"]

@@ -112,12 +112,13 @@ def simulate(url: str, device_id: str, settings: Settings, hold_seconds: int = 0
 
 
 def main():
-    parser=argparse.ArgumentParser(description="clikVM Android device gateway")
+    parser=argparse.ArgumentParser(description="clikVM device and voice-controller gateway")
     parser.add_argument("--env-file",type=Path,default=Path(".env"))
     sub=parser.add_subparsers(dest="command",required=True)
     init=sub.add_parser("init-env",help="Create local credentials without printing secrets")
     init.add_argument("--output",type=Path,default=Path(".env"))
     init.add_argument("--device",default="cores3-01")
+    init.add_argument("--controller",help="Provision one separate voice-controller credential bound to --device")
     init.add_argument("--simulation",action="store_true")
     serve=sub.add_parser("serve")
     serve.add_argument("--host",default="127.0.0.1")
@@ -134,11 +135,17 @@ def main():
         import re
         if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}",args.device):
             parser.error("Device ID must have 1..64 letters, digits, underscores or hyphens")
+        if args.controller and not re.fullmatch(r"[A-Za-z0-9_-]{1,64}",args.controller):
+            parser.error("Controller ID must have 1..64 letters, digits, underscores or hyphens")
         if args.output.exists():
             parser.error("Refusing to overwrite existing credentials")
         values={"CLIK_DEVICE_TOKENS_JSON":json.dumps({args.device:secrets.token_urlsafe(32)},separators=(",",":")),
                 "CLIK_OPERATOR_TOKEN":secrets.token_urlsafe(32),"CLIK_STATE_DIR":".state/gateway",
                 "CLIK_ALLOW_SIMULATION":"1" if args.simulation else "0","CLIK_REQUIRE_ACTION_CONFIRMATION":"0"}
+        if args.controller:
+            values.update(CLIK_CONTROLLER_TOKENS_JSON=json.dumps({args.controller:secrets.token_urlsafe(32)},separators=(",",":")),
+                          CLIK_CONTROLLER_TARGETS_JSON=json.dumps({args.controller:args.device},separators=(",",":")),
+                          CLIK_TARGET_ONLINE_SECONDS="30")
         args.output.parent.mkdir(parents=True,exist_ok=True)
         with args.output.open("x") as out:
             out.write("# Local secrets. Do not commit this file.\n")

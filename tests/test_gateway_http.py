@@ -42,7 +42,7 @@ class RealHTTPTests(unittest.TestCase):
                         except httpx.HTTPError: pass
                         time.sleep(.05)
                     else: self.fail("Gateway readiness timeout")
-                    self.assertIn("Twój telefon",client.get(url+"/").text)
+                    self.assertIn("Twoje urządzenia",client.get(url+"/").text)
                 output=io.StringIO()
                 with contextlib.redirect_stdout(output):
                     simulate(url,"a",Settings(device_tokens={"a":"d"*32},operator_token="o"*32,allow_simulation=True))

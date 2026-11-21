@@ -9,6 +9,11 @@
 
 # Pierwsze uruchomienie
 
+Ta instrukcja prowadzi przez bazowy wariant Android USB host oraz symulator.
+Dla komputera wybierz [agenta desktopowego](desktop-agent.md) i
+[kontroler sieciowy](controller-modes.md). Wszystkie ścieżki, wymagania i
+etapy wdrożenia porównuje [system wielourządzeniowy](universal-system.md).
+
 ## 1. Najpierw uruchom serwer i sprawdź pętlę HTTP
 
 W katalogu repozytorium wykonaj `make setup`, `make init-demo`, a następnie

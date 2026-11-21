@@ -1,7 +1,8 @@
 # Zasady pracy w clikVM/m5stack
 
-Repozytorium zawiera runtime kontrolera Androida i jego gateway. Zachowuj
-oddzielenie firmware, protokołu, API, operatora i usług modelowych.
+Repozytorium zawiera kontrolery M5Stack, gateway i wykonawców Androida,
+komputerów, RFB/VNC oraz HTTP API. Zachowuj oddzielenie firmware, transportu,
+obserwacji, operatora i usług modelowych. Samo KM nie stanowi pełnego KVM.
 
 ## Zmiany
 

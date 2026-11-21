@@ -28,6 +28,27 @@ rewizji, adaptera, źródła zasilania, telefonu lub istotnej wersji Androida.
 
 ## Karta zestawu
 
+W 0.2 zakres obejmuje również kontrolery sieciowe, USB device i komputer.
+Testy H11–H14 oraz N01–N04 opisuje [controller-modes.md](controller-modes.md).
+Poniższą kartę rozszerz o OS, wersję serwera VNC lub kontrakt API, backend node,
+numer monitora, DPI/skalowanie i SHA źródeł agenta.
+
+| ID | Scenariusz 0.2 | Kryterium i dowód | Status |
+|---|---|---|---|
+| PC01 | Windows w zwykłej sesji użytkownika | Doctor, wzorzec obrazu, narożniki kliknięć, klawisze, ASCII i URL; zapisz DPI | NOT_RUN |
+| PC02 | macOS z nadanymi i cofniętymi zgodami | Obraz/wejście dopiero po zgodach; cofnięcie zatrzymuje zadanie | NOT_RUN |
+| PC03 | X11 i zmiana układu monitorów | Zgodna geometria albo odmowa; brak kliknięcia w innym ekranie | NOT_RUN |
+| PC04 | Konkretny produkt RFB/VNC | Handshake, transport TLS/tunel, resize, obserwacja i przerwanie press/release | NOT_RUN |
+| PC05 | Własne HTTP API | Stan przed/po, odrzucona operacja, przekierowanie i utrata odpowiedzi bez powtórki | NOT_RUN |
+| PC06 | CoreS3 network → własny PC | Głos, świeża obserwacja, jedno zadanie; nie uruchamia USB hosta | NOT_RUN |
+| PC07 | Restart celu podczas nagrywania | Odrzucone stare expected_session_id, brak przekierowania mutacji | NOT_RUN |
+| PC08 | Dwóch wykonawców, dwa scoped tokeny | Kontroler A nie odczytuje ani nie steruje B; operator widzi właściwy stan | NOT_RUN |
+| PC09 | Restart node po rozpoczęciu mutacji | Trwały journal i uncertain, bez automatycznego ponowienia wejścia | NOT_RUN |
+| PC10 | Faktyczny model i STT/TTS OQLLM | Własny kontrakt, polski cel, pomiar czasu, wynik sprawdzony odczytem | NOT_RUN |
+
+Wyniki kontrolowanych serwerów testowych w `tests/desktop` nie wypełniają tych
+wierszy. Należy zidentyfikować rzeczywistą konfigurację każdego stanowiska.
+
 W raporcie zapisz następujące dane. Nie umieszczaj tokenów, klucza prywatnego
 ADB, haseł Wi-Fi ani prywatnych danych użytkownika.
 

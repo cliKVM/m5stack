@@ -30,7 +30,7 @@ def write(path: Path, document):
 
 
 def operations(recorded_at: str):
-    from clikvm.models import Tap, Swipe, Key, Text, OpenUrl, Screenshot, Wait
+    from clikvm.models import Tap, Swipe, Key, Text, OpenUrl, Screenshot, Wait, ApiAction
     source = "gateway/clikvm/models.py"
     source_hash = hashlib.sha256((ROOT / source).read_bytes()).hexdigest()
     summaries = {
@@ -42,29 +42,64 @@ def operations(recorded_at: str):
         "screenshot": "Capture a new Android screen through authenticated ADB.",
         "wait": "Wait for a bounded duration before another observation.",
     }
+    universal_summaries = {
+        "tap": "Click or tap a bounded coordinate in the target's current screenshot.",
+        "swipe": "Drag between bounded screenshot coordinates with a bounded duration.",
+        "key": "Send a declared key with the target platform's key semantics.",
+        "text": "Enter printable ASCII, excluding percent, using the declared input adapter.",
+        "open_url": "Open a validated HTTP(S) URL only when the target advertises this operation.",
+        "screenshot": "Request an actual screenshot from a declared image-capable adapter.",
+        "wait": "Wait for a bounded duration before a fresh observation.",
+        "api": "Execute one configured API operation with locally validated JSON Schema arguments.",
+    }
     result = []
-    for cls in (Tap, Swipe, Key, Text, OpenUrl, Screenshot, Wait):
-        args_schema = cls.model_json_schema()
-        kind = args_schema["properties"]["type"]["const"]
-        effects = [] if kind == "wait" else ["read_data", "remote_session"] if kind == "screenshot" else ["external_write", "remote_session"]
-        result.append({
-            "schema": "poa.operation/v1",
-            "operation_id": f"android.{kind}",
-            "uri": f"proc://clikvm/android/{kind}/v1",
-            "version": 1,
-            "summary": summaries[kind],
-            "input_schema": args_schema,
-            "effects": effects,
-            "risk": "low" if kind == "wait" else "medium",
-            "lifecycle": "candidate",
-            "provenance": {
-                "registry": "clikvm.android",
-                "source_id": source,
-                "source_sha256": source_hash,
-                "origin": "declared",
-                "recorded_at": recorded_at,
-            },
-        })
+    for namespace, classes, descriptions in (
+        ("android", (Tap, Swipe, Key, Text, OpenUrl, Screenshot, Wait), summaries),
+        ("device", (Tap, Swipe, Key, Text, OpenUrl, Screenshot, Wait, ApiAction), universal_summaries),
+    ):
+        for cls in classes:
+            args_schema = cls.model_json_schema()
+            # POA's closed top-level object subset excludes $defs. Resolve local
+            # references without changing their validation meaning; recursive or
+            # external references fail instead of silently weakening a schema.
+            definitions=args_schema.pop("$defs",{})
+            def inline(value, stack=()):
+                if isinstance(value,list):
+                    return [inline(item,stack) for item in value]
+                if isinstance(value,dict):
+                    if "$ref" in value:
+                        reference=value["$ref"]
+                        if not reference.startswith("#/$defs/") or reference in stack:
+                            raise ValueError("POA export cannot inline recursive/external schema reference")
+                        name=reference[len("#/$defs/"):]
+                        if name not in definitions:
+                            raise ValueError("POA export cannot resolve model definition")
+                        target=inline(definitions[name],stack+(reference,))
+                        siblings=inline({key:item for key,item in value.items() if key!="$ref"},stack)
+                        return {"allOf":[target,siblings]} if siblings else target
+                    return {key:inline(item,stack) for key,item in value.items()}
+                return value
+            args_schema=inline(args_schema)
+            kind = args_schema["properties"]["type"]["const"]
+            effects = [] if kind == "wait" else ["read_data", "remote_session"] if kind == "screenshot" else ["external_write", "remote_session"]
+            result.append({
+                "schema": "poa.operation/v1",
+                "operation_id": f"{namespace}.{kind}",
+                "uri": f"proc://clikvm/{namespace}/{kind}/v1",
+                "version": 1,
+                "summary": descriptions[kind],
+                "input_schema": args_schema,
+                "effects": effects,
+                "risk": "low" if kind == "wait" else "medium",
+                "lifecycle": "candidate",
+                "provenance": {
+                    "registry": f"clikvm.{namespace}",
+                    "source_id": source,
+                    "source_sha256": source_hash,
+                    "origin": "declared",
+                    "recorded_at": recorded_at,
+                },
+            })
     return result
 
 
@@ -112,7 +147,9 @@ def check(events_path: Path | None = None):
     checks.append("poa.operation/v1-and-model-source-binding")
 
     process_schema = load(ROOT / ".governance/upstream/poa-process.schema.json")
-    Draft202012Validator(process_schema, format_checker=FormatChecker()).validate(load(ROOT / ".governance/poa.json"))
+    process_validator=Draft202012Validator(process_schema, format_checker=FormatChecker())
+    for path in (".governance/poa.json", ".governance/poa-multidevice.json"):
+        process_validator.validate(load(ROOT / path))
     checks.append("poa.process/v1")
 
     audit_schema = load(ROOT / ".governance/upstream/logs-event.schema.json")
@@ -137,7 +174,7 @@ def check(events_path: Path | None = None):
                 event_count += 1
         checks.append("actual-audit-stream")
     return {"schema": "clikvm.standards-check/v1", "ok": True,
-            "checks": checks, "events_checked": event_count,
+            "checks": checks, "events_checked": event_count, "operation_records":len(declared), "logical_action_types":8, "processes_checked":2,
             "scope": "offline extracted contracts and producer output; no fleet certification or hardware attestation"}
 
 

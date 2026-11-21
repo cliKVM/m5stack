@@ -5,8 +5,8 @@
   "real_hardware_tested": false,
   "node_version": "24.22.3",
   "source_sha256": {
-    "gateway/clikvm/static/app.js": "03ed75429f8fe0969b152a7e8cdd7f7009da42e0e8032becf2317e16914d7774",
-    "firmware/main/local.html": "b985a5cce00f0eac0598c7a4e4ab6dbbbe76d97b9bcd8a6cee1718df9586ee22"
+    "gateway/clikvm/static/app.js": "7310f2bfec2634bf4997093980634bbf7d99763573416e79285f0e90a34ec6da",
+    "firmware/main/local.html": "67e7a7698d3a08a49db074bec6b7129cc42eec83a07a38d4e6d37208fe4c7c21"
   },
   "checks": [
     {
@@ -22,7 +22,7 @@
       "result": "PASS"
     },
     {
-      "name": "Dashboard capture button reaches authenticated gateway capture flag",
+      "name": "Delayed dashboard capture POST completes before handler resolves; authenticated flag changes only after dispatch",
       "result": "PASS"
     },
     {

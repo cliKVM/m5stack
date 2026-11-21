@@ -1,0 +1,375 @@
+{
+  "schema": "clikvm.compatibility/v1",
+  "release": "0.2.0",
+  "updated": "2026-11-21",
+  "notice": "Lista opisuje zaimplementowane adaptery i ich warunki. Nie jest certyfikatem zgodności dowolnego urządzenia. HIL nie wykonano.",
+  "text_input": "printable ASCII excluding percent; voice/intent text supports Unicode",
+  "controller": {
+    "hardware": "M5Stack/ESP32 with supported firmware board profile",
+    "transport": "HTTPS over Wi-Fi",
+    "credential_role": "controller bound to exactly one target",
+    "observation": "remote target screenshot or JSON state; no screen capture on controller itself",
+    "requires_target_connector": true,
+    "physical_validation": "NOT_RUN"
+  },
+  "modes": [
+    {
+      "id": "android-adb",
+      "title": "Android przez USB ADB",
+      "platforms": [
+        "android"
+      ],
+      "implementation": "implemented",
+      "transport": "android-adb",
+      "observation": "screenshot",
+      "control": "keyboard-pointer",
+      "autonomous_loop": true,
+      "executor": "ESP32-S3 / firmware clikVM",
+      "requires": [
+        "Debugowanie USB włączone przez właściciela",
+        "Zaufanie RSA potwierdzone na telefonie",
+        "Port USB OTG i poprawne zasilanie VBUS"
+      ],
+      "probe": "Enumeracja ADB ff/42/01, autoryzacja i pierwszy PNG przed gotowością",
+      "limits": [
+        "Chronione okna mogą być puste",
+        "Brak omijania PIN i potwierdzenia RSA",
+        "HIL zależy od modelu telefonu i wersji Androida"
+      ],
+      "sources": [
+        "https://developer.android.com/tools/adb"
+      ],
+      "code": [
+        "firmware/components/clik_usb",
+        "gateway/clikvm/app.py"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "android-aoa-bootstrap",
+      "title": "Android: ręczne KM przez AOA HID",
+      "platforms": [
+        "android"
+      ],
+      "implementation": "implemented",
+      "transport": "aoa-hid",
+      "observation": "none",
+      "control": "keyboard-pointer",
+      "autonomous_loop": false,
+      "executor": "ESP32-S3 jako USB host",
+      "requires": [
+        "Telefon udostępniający AOA HID",
+        "Użytkownik widzi ekran i odblokowuje telefon"
+      ],
+      "probe": "AOA GET_PROTOCOL i rejestracja HID",
+      "limits": [
+        "AOA HID nie dostarcza obrazu ani ADB",
+        "Konfiguracja debugowania pozostaje działaniem właściciela"
+      ],
+      "sources": [
+        "https://source.android.com/docs/core/interaction/accessories/aoa2"
+      ],
+      "code": [
+        "firmware/components/clik_usb"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "native-windows",
+      "title": "Windows: lokalny connector",
+      "platforms": [
+        "windows"
+      ],
+      "implementation": "implemented",
+      "transport": "native-agent",
+      "observation": "screenshot",
+      "control": "keyboard-pointer",
+      "autonomous_loop": true,
+      "executor": "clikvm-node w sesji użytkownika",
+      "requires": [
+        "Instalacja connectora Python z zależnościami native",
+        "Aktywna odblokowana sesja graficzna"
+      ],
+      "probe": "Uruchomienie API obrazu/wejścia, geometria monitora i pierwszy PNG",
+      "limits": [
+        "Podstawowy ekran",
+        "Brak dostępu do bezpiecznego pulpitu UAC i aplikacji o wyższych uprawnieniach",
+        "Nie jest to sterowanie BIOS ani ekranem logowania"
+      ],
+      "sources": [
+        "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput"
+      ],
+      "code": [
+        "agents/desktop/clikvm_node/native.py"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "native-macos",
+      "title": "macOS: lokalny connector",
+      "platforms": [
+        "macos"
+      ],
+      "implementation": "implemented",
+      "transport": "native-agent",
+      "observation": "screenshot",
+      "control": "keyboard-pointer",
+      "autonomous_loop": true,
+      "executor": "clikvm-node w sesji użytkownika",
+      "requires": [
+        "Instalacja connectora Python z zależnościami native",
+        "Ręcznie przyznane Accessibility i Screen Recording"
+      ],
+      "probe": "AXIsProcessTrusted, CGPreflightScreenCaptureAccess i pierwszy PNG",
+      "limits": [
+        "Podstawowy ekran",
+        "Uprawnienia prywatności ustala właściciel",
+        "Fizyczne mapowanie Retina wymaga testu stanowiska"
+      ],
+      "sources": [],
+      "code": [
+        "agents/desktop/clikvm_node/native.py"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "native-linux-x11",
+      "title": "Linux X11: lokalny connector",
+      "platforms": [
+        "linux"
+      ],
+      "implementation": "implemented",
+      "transport": "native-agent",
+      "observation": "screenshot",
+      "control": "keyboard-pointer",
+      "autonomous_loop": true,
+      "executor": "clikvm-node w sesji X11",
+      "requires": [
+        "Instalacja connectora i zależności native",
+        "Aktywny DISPLAY w sesji właściciela"
+      ],
+      "probe": "Odrzucenie Wayland/headless, inicjalizacja capture/input i pierwszy PNG",
+      "limits": [
+        "Podstawowy ekran",
+        "Native backend odrzuca Wayland",
+        "Brak obchodzenia logowania"
+      ],
+      "sources": [],
+      "code": [
+        "agents/desktop/clikvm_node/native.py"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "rfb-vnc",
+      "title": "KVM przez istniejący serwer RFB/VNC",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux",
+        "unknown"
+      ],
+      "implementation": "implemented",
+      "transport": "rfb",
+      "observation": "screenshot",
+      "control": "keyboard-pointer",
+      "autonomous_loop": true,
+      "executor": "clikvm-node jako klient RFB",
+      "requires": [
+        "Działający zgodny serwer RFB udostępniony przez właściciela",
+        "Uwierzytelnione połączenie i bezpieczny tunel/TLS"
+      ],
+      "probe": "Negocjacja RFB 3.3/3.7/3.8, uwierzytelnienie, pełny framebuffer",
+      "limits": [
+        "Raw encoding i DesktopSize; bez proprietary rozszerzeń",
+        "Brak natywnego RDP",
+        "Brak open_url, audio i schowka w tym backendzie",
+        "Wsparcie zależy od funkcji serwera",
+        "Profil RFB Android jest odrzucany przez connector; brak potwierdzonego mapowania na klawisze systemowe Androida"
+      ],
+      "sources": [
+        "https://www.rfc-editor.org/rfc/rfc6143"
+      ],
+      "code": [
+        "agents/desktop/clikvm_node/rfb.py"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "http-api",
+      "title": "Urządzenie lub usługa przez REST API",
+      "platforms": [
+        "network"
+      ],
+      "implementation": "implemented",
+      "transport": "http-api",
+      "observation": "json-state",
+      "control": "allowlisted-api",
+      "autonomous_loop": true,
+      "executor": "clikvm-node z lokalnym profilem API",
+      "requires": [
+        "Jawny stały adres i ścieżka odczytu stanu",
+        "Lokalny katalog operacji z JSON Schema",
+        "Własne uprawnienia do urządzenia/usługi"
+      ],
+      "probe": "Odczyt GET zwracający bounded JSON object przed rejestracją",
+      "limits": [
+        "Stan JSON nie jest obrazem ani KVM",
+        "Model nie wybiera URL, ścieżek ani nagłówków",
+        "Timeout po wysłaniu mutacji oznacza niepewność; brak automatycznego ponawiania"
+      ],
+      "sources": [],
+      "code": [
+        "agents/desktop/clikvm_node/http_api.py",
+        "gateway/clikvm/capabilities.py"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "usb-hid-km",
+      "title": "USB HID: klawiatura i mysz",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux",
+        "android",
+        "unknown"
+      ],
+      "implementation": "implemented",
+      "transport": "hid-device",
+      "observation": "none",
+      "control": "keyboard-pointer",
+      "autonomous_loop": false,
+      "executor": "ESP32-S3 w roli USB device",
+      "requires": [
+        "Port hosta w urządzeniu docelowym",
+        "Prawidłowy tor USB urządzenia i kabel",
+        "Użytkownik lub odrębny kanał obrazu"
+      ],
+      "probe": "Enumeracja HID i lokalny stan montowania USB",
+      "limits": [
+        "Samo HID nie odczyta zrzutu ekranu",
+        "Android jest w tej konfiguracji hostem USB",
+        "Jednego kontrolera OTG nie używa się jednocześnie jako ADB host i HID device"
+      ],
+      "sources": [],
+      "code": [
+        "firmware/components/clik_hid"
+      ],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "source_implemented_not_hardware_certified"
+    },
+    {
+      "id": "wayland-native",
+      "title": "Linux Wayland: portal natywny",
+      "platforms": [
+        "linux"
+      ],
+      "implementation": "not_implemented",
+      "transport": "wayland-portal",
+      "observation": "none",
+      "control": "none",
+      "autonomous_loop": false,
+      "executor": "Przyszły adapter portalu",
+      "requires": [
+        "Implementacja RemoteDesktop/ScreenCast/PipeWire",
+        "Zgoda użytkownika w portalu"
+      ],
+      "probe": "Brak adaptera w 0.2.0",
+      "limits": [
+        "Native connector jawnie odrzuca Wayland",
+        "Możliwy odrębny zgodny serwer RFB, jeśli administrator go udostępni"
+      ],
+      "sources": [
+        "https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.RemoteDesktop.html"
+      ],
+      "code": [],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "not_available_in_release"
+    },
+    {
+      "id": "rdp-native",
+      "title": "Natywny RDP",
+      "platforms": [
+        "windows"
+      ],
+      "implementation": "not_implemented",
+      "transport": "rdp",
+      "observation": "none",
+      "control": "none",
+      "autonomous_loop": false,
+      "executor": "Brak adaptera w 0.2.0",
+      "requires": [
+        "Przyszły zweryfikowany adapter RDP"
+      ],
+      "probe": "Brak",
+      "limits": [
+        "Nie należy utożsamiać RFB/VNC z RDP"
+      ],
+      "sources": [],
+      "code": [],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "not_available_in_release"
+    },
+    {
+      "id": "ios-full-kvm",
+      "title": "iPhone / iPad: pełny agent KVM",
+      "platforms": [
+        "ios",
+        "ipados"
+      ],
+      "implementation": "not_implemented",
+      "transport": "unavailable",
+      "observation": "none",
+      "control": "none",
+      "autonomous_loop": false,
+      "executor": "Brak adaptera w 0.2.0",
+      "requires": [
+        "Dostępny i zatwierdzony kanał obserwacji i kontroli"
+      ],
+      "probe": "Brak",
+      "limits": [
+        "Rozpoznanie platformy w schemacie nie oznacza obsługi",
+        "Nie deklarujemy odczytu ekranu przez samo USB HID ani zdalnego zaufania"
+      ],
+      "sources": [],
+      "code": [],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "not_available_in_release"
+    },
+    {
+      "id": "external-video",
+      "title": "HDMI/UVC lub kamera do urządzeń bez API",
+      "platforms": [
+        "unknown"
+      ],
+      "implementation": "planned",
+      "transport": "external-video",
+      "observation": "none",
+      "control": "none",
+      "autonomous_loop": false,
+      "executor": "Przyszły oddzielny bridge wideo i KM",
+      "requires": [
+        "Fizycznie dostępne wyjście obrazu lub kamera",
+        "Dodatkowy host obsługujący video capture",
+        "Kalibracja obrazu do współrzędnych wejścia"
+      ],
+      "probe": "Brak adaptera capture w 0.2.0",
+      "limits": [
+        "ESP32 HID nie staje się przez to capture card",
+        "Kamera nie jest wymagana w działającym ADB/native/RFB"
+      ],
+      "sources": [],
+      "code": [],
+      "physical_validation": "NOT_RUN",
+      "support_claim": "not_available_in_release"
+    }
+  ]
+}

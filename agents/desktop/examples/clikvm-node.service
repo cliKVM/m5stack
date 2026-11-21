@@ -1,0 +1,13 @@
+[Unit]
+Description=hey Asa / clikVM desktop node
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/share/clikvm-node/venv/bin/clikvm-node --config %h/.config/clikvm/node.json --env-file %h/.config/clikvm/node.env run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

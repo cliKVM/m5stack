@@ -1,0 +1,99 @@
+{
+  "recorded_at": "2026-11-21T16:57:36.855082+00:00",
+  "probes": [
+    {
+      "probe": "rfb-doctor-tcp-fixture",
+      "scope": "Real CLI and TCP, controlled RFB server; not physical VNC product",
+      "exit_code": 0,
+      "output": {
+        "status": "observation_available",
+        "profile": {
+          "platform": "linux",
+          "transport": "rfb",
+          "observation_kind": "screenshot",
+          "action_types": [
+            "tap",
+            "swipe",
+            "key",
+            "text",
+            "wait",
+            "screenshot"
+          ],
+          "keys": [
+            "HOME",
+            "BACK",
+            "ENTER",
+            "TAB",
+            "ESCAPE",
+            "DPAD_UP",
+            "DPAD_DOWN",
+            "DPAD_LEFT",
+            "DPAD_RIGHT",
+            "DEL",
+            "APP_SWITCH"
+          ],
+          "api_operations": []
+        },
+        "capabilities": [
+          "screenshot",
+          "keyboard",
+          "mouse",
+          "rfb"
+        ],
+        "observation_kind": "screenshot",
+        "width": 4,
+        "height": 3,
+        "input_probe": "NOT_EXECUTED",
+        "hardware_validated": false
+      }
+    },
+    {
+      "probe": "api-doctor-tcp-fixture",
+      "scope": "Real CLI and HTTP GET; controlled JSON service; no API mutation or live Home Assistant",
+      "exit_code": 0,
+      "output": {
+        "status": "observation_available",
+        "profile": {
+          "platform": "network",
+          "transport": "http-api",
+          "observation_kind": "json-state",
+          "action_types": [
+            "api",
+            "wait"
+          ],
+          "keys": [],
+          "api_operations": [
+            {
+              "id": "light.on",
+              "description": "Fixture-only light",
+              "parameters_schema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              },
+              "requires_confirmation": false
+            }
+          ]
+        },
+        "capabilities": [
+          "api_state",
+          "api_operation"
+        ],
+        "observation_kind": "json-state",
+        "width": 0,
+        "height": 0,
+        "input_probe": "NOT_EXECUTED",
+        "hardware_validated": false
+      }
+    },
+    {
+      "probe": "native-doctor-current-headless-environment",
+      "scope": "Current Linux environment; expected blocked result, no desktop/HIL access",
+      "exit_code": 1,
+      "output": {
+        "status": "error",
+        "diagnostic": "No interactive X11 DISPLAY; start the node in the user's desktop session"
+      }
+    }
+  ]
+}

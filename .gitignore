@@ -22,6 +22,12 @@ firmware/sdkconfig.local
 firmware/sdkconfig.cores3
 firmware/sdkconfig.lcd154
 firmware/sdkconfig.lcd154-touch
+firmware/sdkconfig.*-network
+firmware/sdkconfig.*-hid
+agents/desktop/.venv/
+.venv-node/
+/node.env
+/node.json
 *.pem
 *.key
 *.bin

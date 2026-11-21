@@ -1,0 +1,41 @@
+{
+  "schema": "clikvm.frontend-contract-check/v1",
+  "scope": "Actual JS/HTML in jsdom plus live gateway HTTP; embedded C API simulated",
+  "rendered_browser": "NOT_RUN: DOM test has no raster renderer; see integration-review.md for the separate blocked Chromium attempt",
+  "real_hardware_tested": false,
+  "node_version": "24.22.3",
+  "source_sha256": {
+    "gateway/clikvm/static/app.js": "7310f2bfec2634bf4997093980634bbf7d99763573416e79285f0e90a34ec6da",
+    "firmware/main/local.html": "67e7a7698d3a08a49db074bec6b7129cc42eec83a07a38d4e6d37208fe4c7c21"
+  },
+  "checks": [
+    {
+      "name": "Real HTTP: PNG requires auth, device token cannot list operator sessions",
+      "result": "PASS"
+    },
+    {
+      "name": "Actual dashboard JS login fetches protected PNG as blob, clears input, no storage, simulation label",
+      "result": "PASS"
+    },
+    {
+      "name": "Live dashboard handlers: intent, confirmation, HTTP lease, result, fresh frame and done state",
+      "result": "PASS"
+    },
+    {
+      "name": "Delayed dashboard capture POST completes before handler resolves; authenticated flag changes only after dispatch",
+      "result": "PASS"
+    },
+    {
+      "name": "Late status response cannot restore image/actions after session selection generation changes",
+      "result": "PASS"
+    },
+    {
+      "name": "Actual UI POSTs use scoped bearer and valid unique UUID idempotency headers",
+      "result": "PASS"
+    },
+    {
+      "name": "Actual embedded HTML handlers send correct AOA/control request shapes to simulated device API",
+      "result": "PASS"
+    }
+  ]
+}

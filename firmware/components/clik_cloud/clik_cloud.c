@@ -21,6 +21,7 @@
 static const char *TAG = "clik_cloud";
 static clik_cloud_config_t cfg;
 static char session_id[65];
+static char controller_session_id[65];
 static uint32_t frame_counter, accepted_frame, usb_generation;
 static unsigned last_http_status;
 static char last_error_code[48];
@@ -90,6 +91,7 @@ esp_err_t clik_cloud_init(const clik_cloud_config_t *c) {
 }
 void clik_cloud_clear_session(void) {
     session_id[0] = 0;
+    controller_session_id[0] = 0;
     frame_counter = accepted_frame = 0;
     usb_generation = 0;
 }
@@ -218,6 +220,74 @@ static bool get_int(const cJSON *j, const char *field, int32_t *out, int32_t min
 static void path_session(char *out, size_t n, const char *suffix) {
     snprintf(out, n, "/v1/sessions/%s/%s", session_id, suffix);
 }
+static void path_controller(char *out, size_t n, const char *suffix) {
+    snprintf(out, n, "/v1/controllers/%s/%s", cfg.device_id, suffix);
+}
+static esp_err_t controller_empty_post(const char *suffix) {
+    if (!controller_session_id[0])
+        return ESP_ERR_INVALID_STATE;
+    char path[192];
+    path_controller(path, sizeof path, suffix);
+    cJSON *j = cJSON_CreateObject(), *r = NULL;
+    if (!j)
+        return ESP_ERR_NO_MEM;
+    cJSON_AddStringToObject(j, "expected_session_id", controller_session_id);
+    esp_err_t ret = json_request(path, j, NULL, &r);
+    cJSON_Delete(j);
+    cJSON_Delete(r);
+    return ret;
+}
+esp_err_t clik_cloud_controller_cancel(void) {
+    return controller_empty_post("cancel");
+}
+esp_err_t clik_cloud_controller_target(clik_controller_target_t *target) {
+    if (!target)
+        return ESP_ERR_INVALID_ARG;
+    memset(target, 0, sizeof *target);
+    char path[192], key[33];
+    path_controller(path, sizeof path, "target");
+    random_key(key);
+    esp_http_client_handle_t h = client_new(path, "application/json", key);
+    if (!h)
+        return ESP_ERR_NO_MEM;
+    esp_http_client_set_method(h, HTTP_METHOD_GET);
+    esp_err_t ret = esp_http_client_open(h, 0);
+    cJSON *r = NULL;
+    if (ret == ESP_OK)
+        ret = response_json(h, &r);
+    if (ret == ESP_OK) {
+        char id[65];
+        const cJSON *ready = cJSON_GetObjectItemCaseSensitive(r, "ready");
+        if (!get_str(r, "controller_id", id, sizeof id) || strcmp(id, cfg.device_id) ||
+            !cJSON_IsBool(ready) ||
+            !get_str(r, "target_device_id", target->target_device_id,
+                     sizeof target->target_device_id) ||
+            !safe_id(target->target_device_id) ||
+            !get_str(r, "state", target->state, sizeof target->state))
+            ret = ESP_ERR_INVALID_RESPONSE;
+        else {
+            target->ready = cJSON_IsTrue(ready);
+            get_str(r, "session_id", target->session_id, sizeof target->session_id);
+            get_str(r, "platform", target->platform, sizeof target->platform);
+            get_str(r, "transport", target->transport, sizeof target->transport);
+            get_str(r, "observation_kind", target->observation_kind,
+                    sizeof target->observation_kind);
+            int32_t frame = 0;
+            if (get_int(r, "latest_frame", &frame, 0, INT32_MAX))
+                target->latest_frame = frame;
+            if (target->ready && (!safe_id(target->session_id) || !target->observation_kind[0] ||
+                                  !strcmp(target->observation_kind, "none")))
+                ret = ESP_ERR_INVALID_RESPONSE;
+        }
+    }
+    if (ret != ESP_OK)
+        memset(target, 0, sizeof *target);
+    snprintf(controller_session_id, sizeof controller_session_id, "%s", target->session_id);
+    cJSON_Delete(r);
+    esp_http_client_close(h);
+    esp_http_client_cleanup(h);
+    return ret;
+}
 esp_err_t clik_cloud_start_session(uint32_t generation) {
     clik_cloud_clear_session();
     char path[160], boot[33];
@@ -245,6 +315,7 @@ esp_err_t clik_cloud_start_session(uint32_t generation) {
     cJSON_Delete(r);
     return ret;
 }
+#if CONFIG_CLIK_MODE_ANDROID_HOST
 static esp_err_t capture_sink(const uint8_t *data, size_t length, void *context) {
     esp_http_client_handle_t h = context;
     char head[24];
@@ -253,7 +324,11 @@ static esp_err_t capture_sink(const uint8_t *data, size_t length, void *context)
     ESP_RETURN_ON_ERROR(write_all(h, data, length), TAG, "Chunk body");
     return write_all(h, "\r\n", 2);
 }
+#endif
 esp_err_t clik_cloud_capture(void) {
+#if !CONFIG_CLIK_MODE_ANDROID_HOST
+    return controller_empty_post("capture");
+#else
     if (!session_id[0])
         return ESP_ERR_INVALID_STATE;
     clik_usb_status_t us;
@@ -290,15 +365,28 @@ esp_err_t clik_cloud_capture(void) {
     esp_http_client_close(h);
     esp_http_client_cleanup(h);
     return ret;
+#endif
 }
 esp_err_t clik_cloud_intent(const char *text) {
-    if (!session_id[0] || !accepted_frame || !text || !*text)
+    if (!text || !*text)
         return ESP_ERR_INVALID_STATE;
-    char path[160];
+    char path[192];
+#if CONFIG_CLIK_MODE_ANDROID_HOST
+    if (!session_id[0] || !accepted_frame)
+        return ESP_ERR_INVALID_STATE;
     path_session(path, sizeof path, "intent");
+#else
+    if (!controller_session_id[0])
+        return ESP_ERR_INVALID_STATE;
+    path_controller(path, sizeof path, "intent");
+#endif
     cJSON *j = cJSON_CreateObject(), *r = NULL;
     cJSON_AddStringToObject(j, "text", text);
+#if CONFIG_CLIK_MODE_ANDROID_HOST
     cJSON_AddNumberToObject(j, "frame_id", accepted_frame);
+#else
+    cJSON_AddStringToObject(j, "expected_session_id", controller_session_id);
+#endif
     esp_err_t ret = json_request(path, j, NULL, &r);
     cJSON_Delete(j);
     cJSON_Delete(r);
@@ -419,11 +507,17 @@ esp_err_t clik_cloud_result(const clik_cloud_action_t *a, const char *status, co
     return ret;
 }
 esp_err_t clik_cloud_stt(const uint8_t *wav, size_t length, char *text, size_t capacity) {
+#if CONFIG_CLIK_MODE_ANDROID_HOST
     if (!session_id[0])
         return ESP_ERR_INVALID_STATE;
-    char path[160], key[33];
+#endif
+    char path[192], key[33];
     random_key(key);
+#if CONFIG_CLIK_MODE_ANDROID_HOST
     path_session(path, sizeof path, "audio/stt");
+#else
+    path_controller(path, sizeof path, "audio/stt");
+#endif
     cJSON *r = NULL;
     esp_err_t ret = request(path, "audio/wav", wav, length, key, &r);
     if (ret == ESP_OK && !get_str(r, "text", text, capacity))
@@ -435,11 +529,19 @@ static uint32_t le32(const uint8_t *p) {
     return p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 esp_err_t clik_cloud_speak(const char *text) {
-    if (!session_id[0] || !text)
+    if (!text)
         return ESP_ERR_INVALID_STATE;
-    char path[160], key[33];
+#if CONFIG_CLIK_MODE_ANDROID_HOST
+    if (!session_id[0])
+        return ESP_ERR_INVALID_STATE;
+#endif
+    char path[192], key[33];
     random_key(key);
+#if CONFIG_CLIK_MODE_ANDROID_HOST
     path_session(path, sizeof path, "audio/tts");
+#else
+    path_controller(path, sizeof path, "audio/tts");
+#endif
     cJSON *j = cJSON_CreateObject();
     cJSON_AddStringToObject(j, "text", text);
     char *body = cJSON_PrintUnformatted(j);

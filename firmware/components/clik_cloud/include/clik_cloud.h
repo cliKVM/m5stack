@@ -16,6 +16,12 @@ typedef struct {
     int64_t received_at_us;
     clik_action_t command;
 } clik_cloud_action_t;
+typedef struct {
+    bool ready;
+    char target_device_id[65], session_id[65], state[48];
+    char platform[48], transport[48], observation_kind[24];
+    uint32_t latest_frame;
+} clik_controller_target_t;
 esp_err_t clik_cloud_init(const clik_cloud_config_t *config);
 bool clik_cloud_url_allowed(const char *url);
 esp_err_t clik_cloud_start_session(uint32_t usb_generation);
@@ -31,4 +37,6 @@ esp_err_t clik_cloud_result(const clik_cloud_action_t *action, const char *statu
                             const char *detail);
 esp_err_t clik_cloud_stt(const uint8_t *wav, size_t length, char *text, size_t capacity);
 esp_err_t clik_cloud_speak(const char *text);
+esp_err_t clik_cloud_controller_target(clik_controller_target_t *target);
+esp_err_t clik_cloud_controller_cancel(void);
 /* One caller/task owns all cloud operations. Device token is never logged. */

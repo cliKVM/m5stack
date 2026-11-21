@@ -1,0 +1,18 @@
+{
+  "gateway_url": "https://gateway.example.com",
+  "device_id": "lab-vnc",
+  "token_env": "CLIK_NODE_TOKEN",
+  "state_dir": ".state/lab-vnc",
+  "backend": "rfb",
+  "max_width": 1920,
+  "options": {
+    "host": "127.0.0.1",
+    "port": 5901,
+    "tls": false,
+    "allow_plaintext": true,
+    "allow_none_auth": false,
+    "password_env": "CLIK_RFB_PASSWORD",
+    "platform": "linux",
+    "max_pixels": 8294400
+  }
+}

@@ -2,6 +2,7 @@
 #include "app.h"
 #include "clik_usb.h"
 #include "clik_board.h"
+#include "clik_hid.h"
 #include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,18 +20,66 @@ static QueueHandle_t user_queue;
 static volatile bool host_started, paused;
 static bool app_initialized;
 static bool audio_ready;
+#if CONFIG_CLIK_MODE_ANDROID_HOST
 static uint32_t session_generation;
 static bool pending_result, need_frame;
+static clik_cloud_action_t pending_action;
+static char pending_status[16], pending_detail[96];
+#else
+static clik_controller_target_t remote_target;
+#endif
 #if CONFIG_CLIK_TTS_ENABLED
 static bool completion_spoken;
 #endif
-static clik_cloud_action_t pending_action;
-static char pending_status[16], pending_detail[96];
 bool clik_app_host_started(void) {
     return host_started;
 }
 bool clik_app_paused(void) {
     return paused;
+}
+const char *clik_app_mode(void) {
+#if CONFIG_CLIK_MODE_ANDROID_HOST
+    return "android_usb_host";
+#elif CONFIG_CLIK_MODE_USB_HID
+    return "usb_hid_device";
+#else
+    return "network_controller";
+#endif
+}
+bool clik_app_input_ready(void) {
+    if (paused)
+        return false;
+#if CONFIG_CLIK_MODE_ANDROID_HOST
+    clik_usb_status_t s;
+    clik_usb_get_status(&s);
+    return host_started && s.aoa_ready;
+#elif CONFIG_CLIK_MODE_USB_HID
+    return host_started && clik_hid_ready();
+#else
+    return false;
+#endif
+}
+esp_err_t clik_app_send_key(uint8_t modifiers, uint8_t usage) {
+    if (!clik_app_input_ready())
+        return ESP_ERR_INVALID_STATE;
+#if CONFIG_CLIK_MODE_ANDROID_HOST
+    return clik_usb_send_key(modifiers, usage, 3000);
+#elif CONFIG_CLIK_MODE_USB_HID
+    return clik_hid_key(modifiers, usage, 3000);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+esp_err_t clik_app_send_mouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+    if (!clik_app_input_ready())
+        return ESP_ERR_INVALID_STATE;
+#if CONFIG_CLIK_MODE_ANDROID_HOST
+    return clik_usb_send_mouse(buttons, x, y, wheel, 3000);
+#elif CONFIG_CLIK_MODE_USB_HID
+    return clik_hid_mouse(buttons, x, y, wheel, 3000);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 }
 bool clik_app_enqueue(const user_request_t *r) {
     if (r->kind == USER_PAUSE)
@@ -70,10 +119,17 @@ static void voice(void) {
         show("AUDIO UNAVAILABLE", "SEE UART LOG");
         return;
     }
+#if CONFIG_CLIK_MODE_ANDROID_HOST
     if (!clik_cloud_session()[0]) {
         show("ADB REQUIRED", "FINISH PHONE SETUP");
         return;
     }
+#else
+    if (!remote_target.ready) {
+        show("TARGET UNAVAILABLE", "CHECK GATEWAY PANEL");
+        return;
+    }
+#endif
     size_t count = CONFIG_CLIK_AUDIO_SECONDS * 16000;
     uint8_t *wav = heap_caps_malloc(44 + count * 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (!wav) {
@@ -91,10 +147,18 @@ static void voice(void) {
         e = ESP_ERR_NO_MEM;
     memset(wav, 0, 44 + count * 2);
     free(wav);
+#if CONFIG_CLIK_MODE_ANDROID_HOST
     if (e == ESP_OK)
         e = clik_cloud_capture();
+#endif
+    if (e == ESP_OK && paused)
+        e = ESP_ERR_INVALID_STATE;
     if (e == ESP_OK)
         e = clik_cloud_intent(text);
+#if CONFIG_CLIK_TTS_ENABLED
+    if (e == ESP_OK)
+        completion_spoken = false;
+#endif
     if (text) {
         memset(text, 0, 4097);
         free(text);
@@ -106,7 +170,7 @@ static void local_inputs(void *unused) {
     (void)unused;
     bool last = false, long_sent = false;
     int64_t started = 0;
-#if CONFIG_CLIK_BOARD_CORES3
+#if CONFIG_CLIK_BOARD_CORES3 && CONFIG_CLIK_MODE_ANDROID_HOST
     clik_board_input_t first = {0};
 #endif
     for (;;) {
@@ -114,7 +178,7 @@ static void local_inputs(void *unused) {
         int64_t now = esp_timer_get_time();
         if (in.pressed && !last) {
             started = now;
-#if CONFIG_CLIK_BOARD_CORES3
+#if CONFIG_CLIK_BOARD_CORES3 && CONFIG_CLIK_MODE_ANDROID_HOST
             first = in;
 #endif
             long_sent = false;
@@ -129,6 +193,7 @@ static void local_inputs(void *unused) {
                 vTaskDelay(pdMS_TO_TICKS(30));
                 continue;
             }
+#if CONFIG_CLIK_MODE_ANDROID_HOST
             if (!host_started) {
                 show("STARTING HOST", "CONNECT PHONE USB");
                 esp_err_t e = clik_board_host_power(true);
@@ -164,11 +229,31 @@ static void local_inputs(void *unused) {
                     clik_app_enqueue(&r);
                 }
             }
+#elif CONFIG_CLIK_MODE_USB_HID
+            if (!host_started) {
+                /* Device role: VBUS output remains off. The PC supplies the bus. */
+                esp_err_t e = clik_board_host_power(false);
+                if (e == ESP_OK)
+                    e = clik_hid_start();
+                if (e == ESP_OK) {
+                    host_started = true;
+                    show("HID DEVICE STARTED", "CONNECT PC USB");
+                } else
+                    show("HID START ERROR", esp_err_to_name(e));
+            } else {
+                user_request_t r = {.kind = USER_VOICE};
+                clik_app_enqueue(&r);
+            }
+#else
+            user_request_t r = {.kind = USER_VOICE};
+            clik_app_enqueue(&r);
+#endif
         }
         last = in.pressed;
         vTaskDelay(pdMS_TO_TICKS(30));
     }
 }
+#if CONFIG_CLIK_MODE_ANDROID_HOST
 static esp_err_t execute(const clik_cloud_action_t *a, bool *attempted) {
     *attempted = false;
     if (paused)
@@ -206,6 +291,95 @@ static void reset_cloud_session(void) {
     completion_spoken = false;
 #endif
 }
+#else
+static void remote_loop(void) {
+    int64_t next_poll = 0;
+    char shown_state[48] = "", shown_session[65] = "";
+#if CONFIG_CLIK_MODE_USB_HID
+    bool shown_usb_started = false, shown_hid_ready = false;
+#endif
+#if CONFIG_CLIK_MODE_USB_HID
+    show("TAP TO ENABLE HID", "PC BUS POWER ONLY");
+#else
+    show("NETWORK CONTROLLER", "LOOKING FOR TARGET");
+#endif
+    for (;;) {
+        user_request_t q;
+        if (xQueueReceive(user_queue, &q, pdMS_TO_TICKS(50)) == pdTRUE) {
+            esp_err_t e = ESP_OK;
+            if (q.kind == USER_PAUSE) {
+                paused = true;
+                e = clik_cloud_controller_cancel();
+                show(e == ESP_OK ? "STOP REQUESTED" : "STOP NOT CONFIRMED",
+                     e == ESP_OK ? "IN-FLIGHT MAY FINISH" : "CHECK GATEWAY PANEL");
+            } else if (q.kind == USER_RESUME) {
+                paused = false;
+                show("NEW TASKS ENABLED", "OLD GOAL NOT RESUMED");
+            } else if (!paused && clik_wifi_ready()) {
+                /* Refresh binding before every command: do not send a remembered
+                 * session or select a target based on a stale local cache. */
+                e = clik_cloud_controller_target(&remote_target);
+                if (e != ESP_OK || !remote_target.ready)
+                    show("TARGET UNAVAILABLE", "CHECK GATEWAY PANEL");
+                else if (q.kind == USER_VOICE)
+                    voice();
+                else if (q.kind == USER_CAPTURE) {
+                    e = clik_cloud_capture();
+                    show(e == ESP_OK ? "OBSERVATION REQUESTED" : "REQUEST ERROR",
+                         e == ESP_OK ? remote_target.target_device_id : esp_err_to_name(e));
+                } else if (q.kind == USER_INTENT) {
+                    e = clik_cloud_intent(q.text);
+#if CONFIG_CLIK_TTS_ENABLED
+                    if (e == ESP_OK)
+                        completion_spoken = false;
+#endif
+                    show(e == ESP_OK ? "TASK SUBMITTED" : "TASK ERROR",
+                         e == ESP_OK ? remote_target.target_device_id : esp_err_to_name(e));
+                }
+            }
+            memset(&q, 0, sizeof q);
+        }
+        if (!clik_wifi_ready() || esp_timer_get_time() < next_poll)
+            continue;
+        next_poll = esp_timer_get_time() + 2000000;
+        esp_err_t e = clik_cloud_controller_target(&remote_target);
+        if (e != ESP_OK) {
+            show("GATEWAY UNAVAILABLE", esp_err_to_name(e));
+            shown_state[0] = 0;
+            continue;
+        }
+        bool changed = strcmp(shown_state, remote_target.state) ||
+                       strcmp(shown_session, remote_target.session_id);
+#if CONFIG_CLIK_MODE_USB_HID
+        changed =
+            changed || shown_usb_started != host_started || shown_hid_ready != clik_hid_ready();
+        shown_usb_started = host_started;
+        shown_hid_ready = clik_hid_ready();
+#endif
+        if (changed) {
+            snprintf(shown_state, sizeof shown_state, "%s", remote_target.state);
+            snprintf(shown_session, sizeof shown_session, "%s", remote_target.session_id);
+            if (!paused) {
+#if CONFIG_CLIK_MODE_USB_HID
+                if (!host_started)
+                    show("TAP TO ENABLE HID", remote_target.target_device_id);
+                else
+#endif
+                    show(remote_target.ready ? remote_target.state : "TARGET UNAVAILABLE",
+                         remote_target.target_device_id);
+            }
+        }
+#if CONFIG_CLIK_TTS_ENABLED
+        if (strcmp(remote_target.state, "done") != 0)
+            completion_spoken = false;
+        else if (!paused && !completion_spoken && audio_ready) {
+            completion_spoken = true;
+            clik_cloud_speak("Zadanie zostało wykonane.");
+        }
+#endif
+    }
+}
+#endif
 void app_main(void) {
     esp_err_t e = nvs_flash_init();
     /* Never erase NVS automatically: it contains the device's trusted ADB key. */
@@ -235,6 +409,9 @@ void app_main(void) {
         return;
     }
     app_initialized = true;
+#if !CONFIG_CLIK_MODE_ANDROID_HOST
+    remote_loop();
+#else
     show("TAP TO START USB", "PHONE + HOST POWER");
     clik_usb_state_t shown = CLIK_USB_DISCONNECTED;
     int64_t next_poll = 0;
@@ -371,4 +548,5 @@ void app_main(void) {
         strcpy(pending_status, e == ESP_OK ? "succeeded" : attempted ? "uncertain" : "failed");
         snprintf(pending_detail, sizeof pending_detail, "%s", esp_err_to_name(e));
     }
+#endif
 }

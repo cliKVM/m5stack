@@ -1,0 +1,11 @@
+{
+  "gateway_url": "https://gateway.example.com",
+  "device_id": "office-pc",
+  "token_env": "CLIK_NODE_TOKEN",
+  "state_dir": ".state/office-pc",
+  "backend": "native",
+  "max_width": 1920,
+  "max_frame_bytes": 4194304,
+  "poll_seconds": 1,
+  "options": {}
+}

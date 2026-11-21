@@ -2,6 +2,8 @@
 #include "app.h"
 #include "clik_board.h"
 #include "clik_usb.h"
+#include "clik_hid.h"
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -184,11 +186,22 @@ static esp_err_t status(httpd_req_t *r) {
     cJSON *j = cJSON_CreateObject();
     cJSON_AddBoolToObject(j, "provisioning", provisioning);
     cJSON_AddBoolToObject(j, "wifi", clik_wifi_ready());
-    cJSON_AddBoolToObject(j, "host_started", clik_app_host_started());
+    cJSON_AddBoolToObject(j, "host_started",
+                          !strcmp(clik_app_mode(), "android_usb_host") && clik_app_host_started());
+    cJSON_AddBoolToObject(j, "usb_started", clik_app_host_started());
+    cJSON_AddBoolToObject(j, "km_ready", clik_app_input_ready());
+    cJSON_AddBoolToObject(j, "hid", clik_hid_ready());
+    cJSON_AddStringToObject(j, "mode", clik_app_mode());
     cJSON_AddBoolToObject(j, "paused", clik_app_paused());
     cJSON_AddStringToObject(j, "board", clik_board_name());
     cJSON_AddStringToObject(j, "ip", ip);
+#if CONFIG_CLIK_MODE_ANDROID_HOST
     cJSON_AddStringToObject(j, "usb", clik_usb_state_name(s.state));
+#elif CONFIG_CLIK_MODE_USB_HID
+    cJSON_AddStringToObject(j, "usb", clik_hid_ready() ? "HID_DEVICE_READY" : "HID_WAIT_FOR_PC");
+#else
+    cJSON_AddStringToObject(j, "usb", "NETWORK_CONTROLLER");
+#endif
     cJSON_AddBoolToObject(j, "aoa", s.aoa_ready);
     cJSON_AddBoolToObject(j, "adb", s.adb_ready);
     return send_json(r, 200, j);
@@ -196,8 +209,9 @@ static esp_err_t status(httpd_req_t *r) {
 static esp_err_t km(httpd_req_t *r) {
     if (!authenticated(r))
         return answer(r, 401, "Wpisz kod z ekranu");
-    if (!clik_app_host_started() || clik_app_paused())
-        return answer(r, 409, "Uruchom host fizycznym przyciskiem kontrolera");
+    if (!clik_app_input_ready())
+        return answer(r, 409,
+                      "Wejście KM niegotowe: sprawdź tryb, fizyczny Start i połączenie USB");
     cJSON *j = read_json(r);
     char type[20];
     esp_err_t e = ESP_ERR_INVALID_ARG;
@@ -205,15 +219,15 @@ static esp_err_t km(httpd_req_t *r) {
         if (!strcmp(type, "key")) {
             int usage, mod;
             if (number(j, "usage", &usage, 0, 101) && number(j, "modifier", &mod, 0, 255))
-                e = clik_usb_send_key(mod, usage, 3000);
+                e = clik_app_send_key(mod, usage);
         } else if (!strcmp(type, "mouse")) {
             int x, y, w;
             if (number(j, "dx", &x, -100, 100) && number(j, "dy", &y, -100, 100) &&
                 number(j, "wheel", &w, -10, 10))
-                e = clik_usb_send_mouse(0, x, y, w, 3000);
+                e = clik_app_send_mouse(0, x, y, w);
         } else if (!strcmp(type, "click")) {
-            e = clik_usb_send_mouse(1, 0, 0, 0, 3000);
-            esp_err_t release = clik_usb_send_mouse(0, 0, 0, 0, 3000);
+            e = clik_app_send_mouse(1, 0, 0, 0);
+            esp_err_t release = clik_app_send_mouse(0, 0, 0, 0);
             if (e == ESP_OK)
                 e = release;
         }

@@ -1,5 +1,23 @@
 # Zmiany
 
+## 0.2.0 — 2026-11-21
+
+- Wspólny kontrakt możliwości: platforma, transport, obserwacja, akcje, klawisze i operacje API.
+- Agent Windows/macOS/Linux X11: rzeczywiste screenshoty oraz wejście klawiatury i myszy.
+- Własny klient RFB 3.3/3.7/3.8 do zgodnych serwerów VNC, z ograniczeniami rozmiaru i transportem TLS/tunel.
+- Adapter stałego HTTP API: obserwacje JSON i zamknięty katalog operacji ze schematami argumentów.
+- Oddzielne tokeny kontrolerów głosowych oraz przypisanie M5Stack do urządzenia docelowego.
+- Trzy rozłączne tryby M5Stack: Android USB host, kontroler sieciowy oraz USB HID device; dziewięć profili firmware.
+- Prawdziwy TinyUSB HID keyboard/mouse, zwalnianie wejścia i jawne warunki zasilania VBUS.
+- Panel rozróżnia screenshot, stan JSON i brak obserwacji; zachowano zgodność klienta Androida 0.1.
+- Dziennik wykonawcy desktopowego zabezpiecza przed ponowieniem niepewnego kliknięcia.
+- POA: osiem logicznych typów akcji i 15 rekordów katalogu (w tym siedem zgodnych URI Androida).
+- Instrukcje instalacji, trybów USB, wyboru kanału, kwalifikacji systemów i planu dalszej rozbudowy.
+
+Wydanie programowe do kwalifikacji. Brak fizycznej walidacji MCU, Androida,
+Windows/macOS/X11 i produkcyjnych usług modelowych. HID nie dostarcza obrazu;
+Wayland portal, iOS KVM, BLE i sprzętowe przechwytywanie BIOS są poza implementacją.
+
 ## 0.1.0 — 2026-11-21
 
 - Firmware ESP-IDF 5.4.2 dla CoreS3 K128 oraz Waveshare LCD/Touch 1.54.

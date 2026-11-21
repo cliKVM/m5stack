@@ -43,9 +43,9 @@
     "provenance": {
       "registry": "clikvm.android",
       "source_id": "gateway/clikvm/models.py",
-      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
       "origin": "declared",
-      "recorded_at": "2026-11-21T16:21:49.550883Z"
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
     }
   },
   {
@@ -113,9 +113,9 @@
     "provenance": {
       "registry": "clikvm.android",
       "source_id": "gateway/clikvm/models.py",
-      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
       "origin": "declared",
-      "recorded_at": "2026-11-21T16:21:49.550883Z"
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
     }
   },
   {
@@ -166,9 +166,9 @@
     "provenance": {
       "registry": "clikvm.android",
       "source_id": "gateway/clikvm/models.py",
-      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
       "origin": "declared",
-      "recorded_at": "2026-11-21T16:21:49.550883Z"
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
     }
   },
   {
@@ -208,9 +208,9 @@
     "provenance": {
       "registry": "clikvm.android",
       "source_id": "gateway/clikvm/models.py",
-      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
       "origin": "declared",
-      "recorded_at": "2026-11-21T16:21:49.550883Z"
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
     }
   },
   {
@@ -250,9 +250,9 @@
     "provenance": {
       "registry": "clikvm.android",
       "source_id": "gateway/clikvm/models.py",
-      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
       "origin": "declared",
-      "recorded_at": "2026-11-21T16:21:49.550883Z"
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
     }
   },
   {
@@ -285,9 +285,9 @@
     "provenance": {
       "registry": "clikvm.android",
       "source_id": "gateway/clikvm/models.py",
-      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
       "origin": "declared",
-      "recorded_at": "2026-11-21T16:21:49.550883Z"
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
     }
   },
   {
@@ -324,9 +324,387 @@
     "provenance": {
       "registry": "clikvm.android",
       "source_id": "gateway/clikvm/models.py",
-      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
       "origin": "declared",
-      "recorded_at": "2026-11-21T16:21:49.550883Z"
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.tap",
+    "uri": "proc://clikvm/device/tap/v1",
+    "version": 1,
+    "summary": "Click or tap a bounded coordinate in the target's current screenshot.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "tap",
+          "title": "Type",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "Tap",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.swipe",
+    "uri": "proc://clikvm/device/swipe/v1",
+    "version": 1,
+    "summary": "Drag between bounded screenshot coordinates with a bounded duration.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "swipe",
+          "title": "Type",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        },
+        "x2": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y2": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        },
+        "duration_ms": {
+          "default": 300,
+          "maximum": 3000,
+          "minimum": 50,
+          "title": "Duration Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "x",
+        "y",
+        "x2",
+        "y2"
+      ],
+      "title": "Swipe",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.key",
+    "uri": "proc://clikvm/device/key/v1",
+    "version": 1,
+    "summary": "Send a declared key with the target platform's key semantics.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "key",
+          "title": "Type",
+          "type": "string"
+        },
+        "key": {
+          "enum": [
+            "HOME",
+            "BACK",
+            "ENTER",
+            "TAB",
+            "ESCAPE",
+            "DPAD_UP",
+            "DPAD_DOWN",
+            "DPAD_LEFT",
+            "DPAD_RIGHT",
+            "DEL",
+            "APP_SWITCH"
+          ],
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "key"
+      ],
+      "title": "Key",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.text",
+    "uri": "proc://clikvm/device/text/v1",
+    "version": 1,
+    "summary": "Enter printable ASCII, excluding percent, using the declared input adapter.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "text",
+          "title": "Type",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "text"
+      ],
+      "title": "Text",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.open_url",
+    "uri": "proc://clikvm/device/open_url/v1",
+    "version": 1,
+    "summary": "Open a validated HTTP(S) URL only when the target advertises this operation.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "open_url",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 1024,
+          "minLength": 8,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "url"
+      ],
+      "title": "OpenUrl",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.screenshot",
+    "uri": "proc://clikvm/device/screenshot/v1",
+    "version": 1,
+    "summary": "Request an actual screenshot from a declared image-capable adapter.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "screenshot",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Screenshot",
+      "type": "object"
+    },
+    "effects": [
+      "read_data",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.wait",
+    "uri": "proc://clikvm/device/wait/v1",
+    "version": 1,
+    "summary": "Wait for a bounded duration before a fresh observation.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "wait",
+          "title": "Type",
+          "type": "string"
+        },
+        "duration_ms": {
+          "default": 500,
+          "maximum": 5000,
+          "minimum": 50,
+          "title": "Duration Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Wait",
+      "type": "object"
+    },
+    "effects": [],
+    "risk": "low",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "device.api",
+    "uri": "proc://clikvm/device/api/v1",
+    "version": 1,
+    "summary": "Execute one configured API operation with locally validated JSON Schema arguments.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "api",
+          "title": "Type",
+          "type": "string"
+        },
+        "operation": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Operation",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": {},
+          "title": "Arguments",
+          "type": "object"
+        }
+      },
+      "required": [
+        "type",
+        "operation"
+      ],
+      "title": "ApiAction",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.device",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:51:57.656962Z"
     }
   }
 ]

@@ -21,4 +21,8 @@ const char *clik_control_key(void);
 bool clik_app_enqueue(const user_request_t *request);
 bool clik_app_host_started(void);
 bool clik_app_paused(void);
+const char *clik_app_mode(void);
+bool clik_app_input_ready(void);
+esp_err_t clik_app_send_key(uint8_t modifiers, uint8_t usage);
+esp_err_t clik_app_send_mouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel);
 void clik_app_request_setup(void);

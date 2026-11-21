@@ -100,13 +100,15 @@ class Store:
             id TEXT PRIMARY KEY, device_id TEXT NOT NULL, boot_id TEXT NOT NULL,
             simulated INTEGER NOT NULL, capabilities TEXT NOT NULL, status TEXT NOT NULL,
             created REAL NOT NULL, expires REAL NOT NULL, latest_frame INTEGER NOT NULL DEFAULT 0,
-            active_intent TEXT, capture_requested INTEGER NOT NULL DEFAULT 0
+            active_intent TEXT, capture_requested INTEGER NOT NULL DEFAULT 0,
+            profile TEXT NOT NULL DEFAULT '{}'
           );
           CREATE INDEX IF NOT EXISTS session_device ON sessions(device_id, created);
           CREATE TABLE IF NOT EXISTS frames(
             session_id TEXT NOT NULL REFERENCES sessions(id), frame_id INTEGER NOT NULL,
             digest TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL,
             size INTEGER NOT NULL, created REAL NOT NULL, retained INTEGER NOT NULL DEFAULT 1,
+            kind TEXT NOT NULL DEFAULT 'png',
             PRIMARY KEY(session_id, frame_id)
           );
           CREATE TABLE IF NOT EXISTS intents(
@@ -148,6 +150,10 @@ class Store:
         """)
         if "capture_requested" not in {r[1] for r in self.db.execute("PRAGMA table_info(sessions)")}:
             self.db.execute("ALTER TABLE sessions ADD COLUMN capture_requested INTEGER NOT NULL DEFAULT 0")
+        if "profile" not in {r[1] for r in self.db.execute("PRAGMA table_info(sessions)")}:
+            self.db.execute("ALTER TABLE sessions ADD COLUMN profile TEXT NOT NULL DEFAULT '{}'")
+        if "kind" not in {r[1] for r in self.db.execute("PRAGMA table_info(frames)")}:
+            self.db.execute("ALTER TABLE frames ADD COLUMN kind TEXT NOT NULL DEFAULT 'png'")
         self._install_projection_capture()
         with self.transaction():
             if not self.db.execute("SELECT 1 FROM gateway_metadata WHERE key='projection_capture_v1'").fetchone():
@@ -196,7 +202,8 @@ class Store:
                     if datatype == "REAL":
                         value = f"CASE WHEN {value} IS NULL THEN NULL ELSE printf('%!.17g',{value}) END"
                     args.extend([f"'{name}'", value])
-                self.db.execute(f"""CREATE TRIGGER IF NOT EXISTS capture_{table}_{operation.lower()}
+                self.db.execute(f"DROP TRIGGER IF EXISTS capture_{table}_{operation.lower()}")
+                self.db.execute(f"""CREATE TRIGGER capture_{table}_{operation.lower()}
                     AFTER {operation} ON {table} BEGIN
                     INSERT INTO projection_changes(table_name,operation,row_json)
                     VALUES('{table}','{label}',json_object({','.join(args)})); END""")
@@ -268,15 +275,20 @@ class Store:
 
     def get_frame(self, session_id: str, frame_id: int) -> sqlite3.Row:
         row = self.db.execute("SELECT * FROM frames WHERE session_id=? AND frame_id=? AND retained=1", (session_id, frame_id)).fetchone()
-        if not row or not (self.frames_dir / (row["digest"] + ".png")).is_file():
+        if not row or not self.observation_path(row).is_file():
             raise HTTPException(404, "Frame not retained")
         return row
 
-    def save_frame_file(self, digest: str, data: bytes):
-        path = self.frames_dir / (digest + ".png")
+    def observation_path(self, row):
+        return self.frames_dir / (row["digest"] + (".json" if row["kind"] == "json" else ".png"))
+
+    def save_frame_file(self, digest: str, data: bytes, kind="png"):
+        if kind not in {"png", "json"}:
+            raise ValueError("Unknown observation media kind")
+        path = self.frames_dir / (digest + "." + kind)
         if path.exists():
             return
-        used = sum(p.stat().st_size for p in self.frames_dir.iterdir() if p.suffix in {".png", ".wav"})
+        used = sum(p.stat().st_size for p in self.frames_dir.iterdir() if p.suffix in {".png", ".wav", ".json"})
         if used + len(data) > self.settings.max_storage_bytes:
             raise HTTPException(507, "Screenshot storage quota exhausted")
         temporary = self.frames_dir / (".upload-" + identifier())
@@ -299,8 +311,8 @@ class Store:
                 for row in rows:
                     self.db.execute("UPDATE frames SET retained=0 WHERE session_id=? AND frame_id=?", (session["id"], row["frame_id"]))
             retained = {r[0] for r in self.db.execute("SELECT DISTINCT digest FROM frames WHERE retained=1")}
-            for path in self.frames_dir.glob("*.png"):
-                if path.stem not in retained:
+            for path in self.frames_dir.iterdir():
+                if path.suffix in {".png", ".json"} and path.stem not in retained:
                     path.unlink(missing_ok=True)
         self.export_events()
 
@@ -379,6 +391,11 @@ class Store:
                         columns = [r[1] for r in info]
                         primary = [r[1] for r in sorted(info, key=lambda r: r[5]) if r[5]]
                         row = payload["row"]
+                        # Explicit v0.1 -> v0.2 upcast preserves older ledger rows.
+                        if table == "sessions" and "profile" not in row:
+                            row["profile"] = "{}"
+                        if table == "frames" and "kind" not in row:
+                            row["kind"] = "png"
                         if set(row) != set(columns):
                             raise ValueError("Projection schema differs from event; migration required")
                         if payload["operation"] == "delete":
@@ -391,8 +408,8 @@ class Store:
                     target.db.execute("INSERT INTO domain_events(sequence,event_id,kind,session_id,occurred_at,payload,audit_json) VALUES(?,?,?,?,?,?,?)", tuple(event))
                 target.db.execute("COMMIT")
                 target._install_projection_capture()
-                for row in target.db.execute("SELECT DISTINCT digest FROM frames WHERE retained=1"):
-                    original = self.frames_dir / (row[0] + ".png")
+                for row in target.db.execute("SELECT DISTINCT digest,kind FROM frames WHERE retained=1"):
+                    original = self.observation_path(row)
                     if original.is_file():
                         shutil.copy2(original, target.frames_dir / original.name)
                 target.export_events()

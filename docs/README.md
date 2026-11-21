@@ -21,6 +21,11 @@ Status `draft` oznacza oczekującą kwalifikację fizycznego zestawu.
 
 | Dokument | Kiedy go użyć |
 |---|---|
+| [System wielourządzeniowy](universal-system.md) | Wybór kanału, role, wspólny cykl i etapy wdrożenia |
+| [Agent desktopowy](desktop-agent.md) | Windows, macOS, Linux X11; instalacja i rzeczywisty doctor |
+| [KVM i API przez sieć](network-kvm.md) | RFB/VNC, kontrakty HTTP, ograniczenia transportu |
+| [Tryby M5Stack](controller-modes.md) | Dziewięć profili i rozłączne role USB host/device/sieć |
+| [Macierz możliwości JSON](../gateway/docs/compatibility.json) | Maszynowy opis implementacji, wymagań i statusu kwalifikacji |
 | [Pierwsze uruchomienie](getting-started.md) | Gateway, konfiguracja modelu, kompilacja i połączenie telefonu |
 | [Architektura](architecture.md) | Granice komponentów, sesje, idempotencja, CQRS i zdarzenia |
 | [Sprzęt i połączenia](hardware.md) | CoreS3, Waveshare, GPIO, audio, VBUS oraz CC |

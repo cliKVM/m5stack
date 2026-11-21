@@ -1,0 +1,70 @@
+{
+  "version": "0.2.0",
+  "recorded_at": "2026-11-21T17:00:36.207593+00:00",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "linux"
+  },
+  "tests": {
+    "status": "PASS",
+    "count": 27,
+    "seconds": 11.391,
+    "command": "python -m unittest discover -s tests/desktop -v",
+    "log": "verification/unit-tests.txt",
+    "log_sha256": "e02c18666d9fe22d4d0593e74c16b2c24560d9b0a0d497e693d73b87f46de296"
+  },
+  "evidence": {
+    "native_backend_code_path_with_os_boundary_fixture": "PASS",
+    "gateway_real_tcp_with_fixture_model": "PASS",
+    "rfb_real_tcp_3_3_3_7_3_8_fragmentation_auth_bounds_freshness": "PASS",
+    "http_api_real_tcp_fixed_templates_state_allowlist": "PASS",
+    "lost_http_ack_retries_without_action_replay": "PASS",
+    "restart_executing_is_uncertain_without_replay": "PASS",
+    "request_rtt_reduces_lease_budget": "PASS",
+    "stale_frame_rejection": "PASS",
+    "cli_doctor_rfb_and_api_tcp_fixtures": "PASS",
+    "native_windows_physical": "NOT_RUN",
+    "native_macos_physical": "NOT_RUN",
+    "native_linux_x11_physical": "NOT_RUN",
+    "real_vnc_product_tls_and_ssh": "NOT_RUN",
+    "production_home_assistant": "NOT_RUN",
+    "live_oqllm_model_stt_tts": "NOT_RUN",
+    "physical_m5stack_to_device_hil": "NOT_RUN",
+    "docker_build_run": "NOT_RUN",
+    "x11_multimonitor_mapping_mismatch_fail_closed": "PASS",
+    "rfb_partial_input_cleanup_and_transport_close": "PASS"
+  },
+  "dependencies": {
+    "httpx": "0.28.1",
+    "Pillow": "13.0.0",
+    "jsonschema": "4.26.0",
+    "pycryptodome": "4.5.0",
+    "uvicorn": "0.52.1",
+    "fastapi": "0.141.1"
+  },
+  "capability_probes": "verification/capability-probes.json",
+  "scope_note": "Models and remote devices in tests are controlled fixtures. Native OS API boundary is replaced by an explicit fixture. No claim of physical OS, VNC product, M5Stack or production provider validation. Source hashes identify this test snapshot, not later edits.",
+  "source_sha256": {
+    "agents/desktop/clikvm_node/__init__.py": "ebfcd5d8e5cd230a9818f74ab9f50fad8d9f94ab8ed3487e8705d0d49e8ccd86",
+    "agents/desktop/clikvm_node/cli.py": "11e1691a8ac5b8e3b5b5766298ec77357e698e2e3136edee1a0e762681505020",
+    "agents/desktop/clikvm_node/common.py": "37ce39f344da9c5f21d368ffb914b7d0c20fc030faa1dcf27ea6bb8240544c90",
+    "agents/desktop/clikvm_node/config.py": "7b4aecc9fe48945f46fecf220b1cdea42b32ceff0d3b5871fe0244c6a8281f0c",
+    "agents/desktop/clikvm_node/http_api.py": "53dd84dc1d1bd39771cc018fe6c9c97ef4cf1eb59d5192ed7a899d6e26bd8d90",
+    "agents/desktop/clikvm_node/native.py": "37aecf4e9030a1e031d63ec155312b5ec97606cdd138127a230bc78bbd4e3493",
+    "agents/desktop/clikvm_node/rfb.py": "6526f4a92ef066a37212639f9faa96ad36938ccc043ad543e8829e9c7d69e0c0",
+    "agents/desktop/clikvm_node/runner.py": "53958b92bf0459833e3541295515576ad6e87da445f73d103939135bbecde733",
+    "agents/desktop/pyproject.toml": "4a88e61921a55e9f705ca0ada25a2a6841cfc1d4e3f3fded339cc1517c324f78",
+    "gateway/clikvm/__init__.py": "12cb763e69fcf3975b7f9d62b7fda09b57efd3fbaa4e6b25f8c4664379e2862c",
+    "gateway/clikvm/app.py": "570131abda3383e654330efdffb2e3cc0d1ae314e6585926f9cfa060f5b01593",
+    "gateway/clikvm/audit.py": "062946e9c7308bd53403e552bbc225a3dbd73457ea26bc3af10dc6e68b47fc40",
+    "gateway/clikvm/capabilities.py": "661347f4714e4c7b9e44330c385f2a1f0b8506e033f17684fefa94918ca97695",
+    "gateway/clikvm/cli.py": "0e9b91fc0f11083ef7d1e5e0b6c6061ec9b81117ff98927cf01efb146e1c2d9d",
+    "gateway/clikvm/config.py": "4a34103983274494d7308d0ce6755f4a6ed870f3f1c866d0ce4765c40372fef5",
+    "gateway/clikvm/models.py": "b467d509586d4fc5407a4331411937dd8f64e79fe7b2c7eae1f46095dd74a961",
+    "gateway/clikvm/store.py": "e0a8f94f49dd85631cd23c2149a5af59d5fcf601fbff0b4335b6d6fa04685ccf",
+    "gateway/clikvm/upstream.py": "5d9228f08b8f567c76d2804bcfa0d4d4c548aa88c96b0818d1669f4bac1fe109",
+    "tests/desktop/test_backends.py": "65b6e0937b375a6fec0dc5937a21b3ba6a73441d26c248751e527a1051052897",
+    "tests/desktop/test_gateway_integration.py": "a49b19450151d28a0e2b42d49d3ab842c66c025daa56ba1a837ac86224b26437",
+    "tests/desktop/test_runner.py": "aa3a6ced45e217a87c1d8da1891ad7e7cde62391b33f3f3beae5ac207275bc29"
+  }
+}

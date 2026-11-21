@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "clikVM Device Gateway",
-    "description": "Typed ESP32 Android controller API. All media and device operations require scoped authorization.",
-    "version": "0.1.0"
+    "description": "Capability-driven Android, desktop, KVM and network-device API. All media and device operations require scoped authorization.",
+    "version": "0.2.0"
   },
   "paths": {
     "/health": {
@@ -294,6 +294,120 @@
                   "type": "string",
                   "format": "binary"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{sid}/observations": {
+      "post": {
+        "summary": "Upload Observation",
+        "operationId": "upload_observation_v1_sessions__sid__observations_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonObservation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameAccepted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{sid}/observations/{frame_id}": {
+      "get": {
+        "summary": "Observation",
+        "operationId": "observation_v1_sessions__sid__observations__frame_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sid"
+            }
+          },
+          {
+            "name": "frame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Frame Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -869,6 +983,362 @@
         }
       }
     },
+    "/v1/controllers/{controller_id}/target": {
+      "get": {
+        "summary": "Controller Target",
+        "operationId": "controller_target_v1_controllers__controller_id__target_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "controller_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Controller Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/controllers/{controller_id}/intent": {
+      "post": {
+        "summary": "Controller Intent",
+        "operationId": "controller_intent_v1_controllers__controller_id__intent_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "controller_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Controller Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControllerIntent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntentCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/controllers/{controller_id}/capture": {
+      "post": {
+        "summary": "Controller Capture",
+        "operationId": "controller_capture_v1_controllers__controller_id__capture_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "controller_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Controller Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControllerGuard"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/controllers/{controller_id}/cancel": {
+      "post": {
+        "summary": "Controller Cancel",
+        "operationId": "controller_cancel_v1_controllers__controller_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "controller_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Controller Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControllerGuard"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/controllers/{controller_id}/audio/stt": {
+      "post": {
+        "summary": "Controller Stt",
+        "operationId": "controller_stt_v1_controllers__controller_id__audio_stt_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "controller_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Controller Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/controllers/{controller_id}/audio/tts": {
+      "post": {
+        "summary": "Controller Tts",
+        "operationId": "controller_tts_v1_controllers__controller_id__audio_tts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "controller_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Controller Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeakRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/oqllm/route": {
       "post": {
         "summary": "Route",
@@ -955,12 +1425,16 @@
               },
               {
                 "$ref": "#/components/schemas/Wait"
+              },
+              {
+                "$ref": "#/components/schemas/ApiAction"
               }
             ],
             "title": "Command",
             "discriminator": {
               "propertyName": "type",
               "mapping": {
+                "api": "#/components/schemas/ApiAction",
                 "key": "#/components/schemas/Key",
                 "open_url": "#/components/schemas/OpenUrl",
                 "screenshot": "#/components/schemas/Screenshot",
@@ -977,7 +1451,10 @@
           },
           "after_action": {
             "type": "string",
-            "const": "screenshot",
+            "enum": [
+              "screenshot",
+              "observation"
+            ],
             "title": "After Action"
           }
         },
@@ -1026,6 +1503,71 @@
         ],
         "title": "ActionResult"
       },
+      "ApiAction": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "api",
+            "title": "Type"
+          },
+          "operation": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Operation"
+          },
+          "arguments": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Arguments"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "operation"
+        ],
+        "title": "ApiAction"
+      },
+      "ApiOperation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Id"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "parameters_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters Schema"
+          },
+          "requires_confirmation": {
+            "type": "boolean",
+            "title": "Requires Confirmation",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "parameters_schema"
+        ],
+        "title": "ApiOperation"
+      },
       "Confirmation": {
         "properties": {
           "approve": {
@@ -1039,6 +1581,57 @@
           "approve"
         ],
         "title": "Confirmation"
+      },
+      "ControllerGuard": {
+        "properties": {
+          "expected_session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Session Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ControllerGuard"
+      },
+      "ControllerIntent": {
+        "properties": {
+          "expected_session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Session Id"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ControllerIntent"
       },
       "FrameAccepted": {
         "properties": {
@@ -1137,6 +1730,31 @@
         ],
         "title": "IntentRequest"
       },
+      "JsonObservation": {
+        "properties": {
+          "frame_id": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Frame Id"
+          },
+          "state": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "State"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "frame_id",
+          "state"
+        ],
+        "title": "JsonObservation"
+      },
+      "JsonValue": {},
       "Key": {
         "properties": {
           "type": {
@@ -1368,17 +1986,23 @@
           "capabilities": {
             "items": {
               "type": "string",
-              "enum": [
-                "adb",
-                "aoa_hid",
-                "microphone",
-                "speaker",
-                "display"
-              ]
+              "maxLength": 40,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$"
             },
             "type": "array",
-            "maxItems": 5,
+            "maxItems": 32,
             "title": "Capabilities"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "simulated": {
             "type": "boolean",
@@ -1488,6 +2112,109 @@
           "y"
         ],
         "title": "Tap"
+      },
+      "TargetProfile": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "windows",
+              "macos",
+              "linux",
+              "ios",
+              "ipados",
+              "network",
+              "unknown"
+            ],
+            "title": "Platform",
+            "default": "android"
+          },
+          "os_version": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Os Version",
+            "default": ""
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80,
+            "title": "Label",
+            "default": ""
+          },
+          "transport": {
+            "type": "string",
+            "enum": [
+              "android-adb",
+              "native-agent",
+              "rfb",
+              "http-api",
+              "hid-bridge"
+            ],
+            "title": "Transport",
+            "default": "android-adb"
+          },
+          "observation_kind": {
+            "type": "string",
+            "enum": [
+              "screenshot",
+              "json-state",
+              "none"
+            ],
+            "title": "Observation Kind",
+            "default": "screenshot"
+          },
+          "action_types": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "tap",
+                "swipe",
+                "key",
+                "text",
+                "open_url",
+                "screenshot",
+                "wait",
+                "api"
+              ]
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Action Types"
+          },
+          "keys": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "HOME",
+                "BACK",
+                "ENTER",
+                "TAB",
+                "ESCAPE",
+                "DPAD_UP",
+                "DPAD_DOWN",
+                "DPAD_LEFT",
+                "DPAD_RIGHT",
+                "DEL",
+                "APP_SWITCH"
+              ]
+            },
+            "type": "array",
+            "maxItems": 11,
+            "title": "Keys"
+          },
+          "api_operations": {
+            "items": {
+              "$ref": "#/components/schemas/ApiOperation"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Api Operations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TargetProfile"
       },
       "Text": {
         "properties": {

@@ -30,6 +30,53 @@ osobno `gateway/clikvm/upstream.py`; ich URL i możliwości muszą odpowiadać
 rzeczywistemu wdrożeniu. Dostawca routingu nie staje się przez to automatycznie
 modelem rozumiejącym obrazy ani usługą mowy.
 
+## Sterowanie wieloma platformami w 0.2.0
+
+Powyższy bezpośredni tor USB pozostaje profilem Androida. M5Stack może także
+pracować jako zdalny interfejs głosowy do przypisanego targetu. W takim trybie
+mikrofon i ekran pozostają na płytce, a obraz/stany i akcje obsługuje
+`agents/desktop/clikvm_node`: lokalny pulpit Windows/macOS/Linux X11, klient
+RFB/VNC albo lokalnie skonfigurowane API. Gateway stosuje tę samą transakcyjną
+pętlę dzierżawy i ponownej obserwacji.
+
+```mermaid
+flowchart TD
+    M["M5: PTT i ekran"] -->|"Token kontrolera / jeden target"| G["Gateway: profil, plan, lease"]
+    G <-->|"PNG i typowane wejście"| D["Connector desktop / RFB"]
+    G <-->|"JSON i operacje z katalogu"| N["Connector API"]
+    G <-->|"Plan, STT, TTS"| O["Skonfigurowane usługi OQLLM"]
+    G --> E["Dziennik, audyt i panel operatora"]
+```
+
+To nie wymaga USB pomiędzy M5 i PC: komunikacja jest przez HTTPS/Wi-Fi.
+Token kontrolera nie jest tokenem operatora ani tokenem connectora.
+Przypisanie `controller_id → target device_id` znajduje się w konfiguracji
+serwera. Firmware wiąże polecenie z `expected_session_id`; zmiana sesji
+podczas nagrywania/STT zatrzymuje stare żądanie. Każdy nowy cel kontrolera
+wymusza świeżą obserwację.
+
+Profil targetu jest stały dla sesji i określa platformę, transport,
+`action_types`, klawisze, rodzaj obserwacji i opcjonalny katalog API. Brak
+profilu oznacza kompatybilny Android z 0.1.0. Pixel input wymaga rzeczywistego
+PNG. API-only dostarcza JSON i wyłącznie `api`/`wait`; panel nie pokazuje
+wtedy wymyślonego ekranu. Sam HID to KM bez kanału obrazu — gateway odmawia
+planowania autonomicznego celu. Wbudowany adapter Wayland portal, RDP ani
+pełny iOS/iPadOS KVM nie jest dostarczany w tym wydaniu.
+
+Dla API adres, metoda, ścieżka i referencje do sekretów pozostają na
+connectorze. Model widzi ID/opis/schemat argumentów. Gateway i connector
+niezależnie sprawdzają te argumenty; nie pozwalają im zmieniać URL ani
+uruchamiać dowolnej powłoki. Niepewna mutacja API nie jest automatycznie
+powtarzana. Stan JSON podlega tej samej kontroli świeżości, retencji,
+idempotencji i odtwarzaniu jak PNG.
+
+Dokładny kontrakt i status możliwości:
+[UNIVERSAL.md](../gateway/docs/UNIVERSAL.md),
+[CONTROLLERS.md](../gateway/docs/CONTROLLERS.md),
+[compatibility.json](../gateway/docs/compatibility.json).
+Oznaczenie adaptera jako zaimplementowanego nie zastępuje HIL konkretnego
+stanowiska; wszystkie ścieżki sprzętowe pozostają `NOT_RUN`.
+
 ## Podział odpowiedzialności
 
 ```mermaid
@@ -39,7 +86,7 @@ flowchart TD
     E <-->|"HTTPS, token urządzenia"| G["Gateway clikVM"]
     G <-->|"Plan / STT / TTS"| O["Skonfigurowane usługi OQLLM / modelu"]
     G --> D["SQLite: stan, zdarzenia, audyt"]
-    G --> F["PNG / WAV poza dziennikiem"]
+    G --> F["PNG / JSON / WAV poza dziennikiem"]
     D --> J["Odtwarzalne projekcje JSONL"]
 ```
 
@@ -89,7 +136,7 @@ Gateway planuje asynchronicznie, wykorzystując cel, rozmiar/obraz ekranu
 i ograniczoną historię ostatnich kroków.
 
 Wyjście modelu musi przejść ścisły schemat Pydantic z zabronionymi polami
-nadmiarowymi. Dostępnych jest siedem operacji: `tap`, `swipe`, `key`, `text`,
+nadmiarowymi. Dla profilu Androida dostępnych jest siedem operacji: `tap`, `swipe`, `key`, `text`,
 `open_url`, `screenshot`, `wait`. Współrzędne są sprawdzane względem
 rzeczywistego PNG. Tekst do Android `input text` to drukowalne ASCII bez `%`;
 tekst celu/STT może być po polsku. URL jest zwykłym HTTP(S), bez danych

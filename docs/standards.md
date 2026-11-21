@@ -17,7 +17,8 @@
 
 # Adopcja Wellmanifest
 
-Projekt jest aplikacją wykonującą ograniczone operacje na Androidzie. Używa
+Projekt jest aplikacją wykonującą ograniczone operacje na urządzeniach przez
+ADB, connector desktop, RFB i skonfigurowane API. Używa
 kontraktów Wellmanifest jako ADOPT; właścicielem kodu runtime jest
 `clikVM/m5stack`. Nie kopiuje silnika Wellman do firmware ani serwera.
 
@@ -26,11 +27,15 @@ kontraktów Wellmanifest jako ADOPT; właścicielem kodu runtime jest
 1. `wellman 0.23.2` uruchomiono z przypiętego źródła. Polecenie `adopt
    runtime-service` wygenerowało manifest i metadane Docs. `adopt auto`
    zarejestrowało wymagania. Ten wynik ma `conformance: unverified`.
-2. Katalog siedmiu operacji wygenerowano z rzeczywistych modeli Pydantic.
+2. Katalog 0.2.0 zawiera osiem typów operacji i 15 rekordów: siedem URI
+   Androida zachowanych dla 0.1.0 oraz osiem ogólnych URI urządzenia.
+   Wygenerowano go z rzeczywistych modeli Pydantic.
    Każdy wpis przechodzi **oficjalny `poa.operation/v1` JSON Schema** i wiąże
    się hashem z `gateway/clikvm/models.py`.
-3. Opis jednego cyklu obserwacja–akcja–weryfikacja przechodzi oficjalny
-   **`poa.process/v1` JSON Schema**.
+3. Opisy cyklu obserwacja–akcja–weryfikacja dla Androida oraz wielu
+   adapterów przechodzą oficjalny **`poa.process/v1` JSON Schema**. Stary
+   proces pozostaje w `.governance/poa.json`, nowy — w
+   `.governance/poa-multidevice.json`.
 4. Producent audytu przechodzi **`wellmanifest.logs/event/v1`**. Reprezentatywne
    zdarzenie zweryfikowano również rzeczywistą funkcją upstream
    `standard.logs_events.validate_event`, nie tylko lokalnym walidatorem.
@@ -68,8 +73,8 @@ Gateway ma własny model domenowy i eksportuje oddzielny audyt Logs.
 | Warstwa | W projekcie | Własność i ograniczenia |
 | --- | --- | --- |
 | URL / SOA | Adres gateway oraz jawnie skonfigurowane endpointy `CLIK_MODEL_ENDPOINT`, `CLIK_STT_ENDPOINT`, `CLIK_TTS_ENDPOINT`, `CLIK_POA_ENDPOINT` | Parametry `.env`; brak kluczy w URL i katalogu operacji |
-| URI / POA | `proc://clikvm/android/tap/v1` i pozostałe URI z katalogu | Lokalne URI projektu; nie twierdzimy, że są już zarejestrowane w publicznym OQLLM |
-| URN / dane | `urn:clikvm:frame:sha256:<digest>` | Tożsamość treści; odczyt nadal wymaga uprawnienia do sesji/urządzenia |
+| URI / POA | `proc://clikvm/android/tap/v1`, `proc://clikvm/device/api/v1` i pozostałe URI z katalogu | Lokalne URI projektu; nie twierdzimy, że są już zarejestrowane w publicznym OQLLM |
+| URN / dane | `urn:clikvm:frame:sha256:<digest>` oraz `urn:clikvm:state:sha256:<digest>` | Tożsamość treści; odczyt nadal wymaga uprawnienia do sesji/urządzenia |
 | Czas zdarzeń | `occurredAt` UTC i ograniczony czas ważności sesji/akcji/lease | Znaczniki czasu nie zastępują kontroli sesji ani idempotencji |
 | URT | Punkt integracji z opcjonalnym `uritime/urtlog` | Brak zweryfikowanej biblioteki w dostarczanym runtime; nie generujemy własnej składni pod nazwą URT |
 
@@ -94,7 +99,9 @@ zapisany do pliku.
 Zmiany pięciu tabel projekcji przechwytują triggery SQL. Zdarzenia
 `projection_changed` zawierają pełne wiersze potrzebne do replay, a
 `clikvm rebuild-projections --destination NOWY_KATALOG` odtwarza ich stan
-z tabeli zdarzeń do nowej bazy i kopiuje zachowane PNG. Oryginał pozostaje
+z tabeli zdarzeń do nowej bazy i kopiuje zachowane PNG oraz JSON stanu.
+Replay jawnie uzupełnia brakujące `sessions.profile` i `frames.kind`
+w wierszach 0.1.0; testy migracji obejmują również starą postać tabel. Oryginał pozostaje
 nienadpisany; podczas operacji gateway musi być zatrzymany. Prywatny dziennik
 domenowy może zawierać tekst celu i polecenia. Ograniczenia dotyczące
 `rawOutputIncluded=false` odnoszą się do oddzielnej koperty Logs, która ma
@@ -122,6 +129,33 @@ użycie nieaktualnych poleceń.
 To implementacja granicy wykonania w clikVM. Nie deklarujemy, że lokalny
 lease jest niezależnie wydanym grantem floty `wellmanifest/authority-lifecycle`
 ani że statyczny plik profilu nadaje uprawnienia.
+
+## Rozszerzenie 0.2.0: zakres możliwości i API
+
+`TargetProfile` jest deklaracją adaptera sprawdzaną przez gateway, a nie grantem
+floty. Connector najpierw sprawdza własne interfejsy i przesyła obserwację.
+Operacja modelu musi pasować do `action_types`, do listy klawiszy oraz —
+w przypadku API — do zarejestrowanego ID i zamkniętego JSON Schema argumentów.
+Profil zawiera opis i schemat, lecz nie URL, nagłówki ani sekrety usługi.
+`requires_confirmation` z lokalnego katalogu jest obowiązkowe nawet wtedy,
+gdy model proponuje brak potwierdzenia.
+
+Eksport POA zachowuje oficjalny zamknięty schemat. Pydantic definiuje typ
+`JsonValue` poprzez lokalne `$defs`; generator rozwiązuje lokalne odwołania
+inline bez zmiany znaczenia walidacji. Rekurencyjne i zewnętrzne odwołania
+zatrzymują eksport. Nie dodano niedozwolonego `$defs` do top-level
+`input_schema` ani nie rozszerzono skopiowanego kontraktu. Limity rozmiaru,
+profil docelowy i konkretny katalog argumentów pozostają kontrolami runtime;
+sam rekord `device.api` nie daje dostępu do dowolnego endpointu.
+
+Kontroler M5 ma odrębnego aktora i token ograniczony do jednego targetu.
+Nie może potwierdzać akcji operatora, wydawać sobie lease ani przesyłać
+fałszywej obserwacji. `expected_session_id` wiąże cel głosowy z sesją widzianą
+przed nagraniem, a nowy obraz/stan jest wymagany przed planowaniem.
+`json-state` zachowuje własny URN i typ mediów; sam kanał KM bez obrazu/stanu
+nie może uruchomić autonomicznego celu. Szczegóły kontraktu:
+[gateway/docs/UNIVERSAL.md](../gateway/docs/UNIVERSAL.md) oraz
+[CONTROLLERS.md](../gateway/docs/CONTROLLERS.md).
 
 ## Luka narzędzia i zakres formalnej adopcji
 

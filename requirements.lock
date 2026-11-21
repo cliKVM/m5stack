@@ -1,5 +1,5 @@
 # Exact Python dependencies from the validated Python 3.12 environment.
-# Includes the lightweight development schema validator.
+# JSON Schema validation is also a runtime dependency for API operation arguments.
 annotated-doc==0.0.7
 annotated-types==0.8.0
 anyio==4.16.0

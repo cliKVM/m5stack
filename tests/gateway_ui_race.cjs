@@ -70,9 +70,49 @@ async function noSessions() {
   assert.equal(h.element('capture').disabled,true);
 }
 
+async function delayedJsonState() {
+  const h=harness(); let releaseJson, jsonStarted;
+  const ready=new Promise(resolve=>{jsonStarted=resolve;});
+  h.context.fetch=async url=>{
+    if (url.endsWith('/status')) return {ok:true,json:async()=>({session_id:'api-a',device_id:'API A',observation_kind:'json-state',latest_frame:7,intent:null,action:null})};
+    assert.equal(url,'/v1/sessions/api-a/observations/7');
+    return {ok:true,json:()=>new Promise(resolve=>{releaseJson=resolve;jsonStarted();})};
+  };
+  h.run('token="operator";selectSession("api-a");globalThis.pending=poll();');
+  await ready;
+  h.run('selectSession("desktop-b");');
+  releaseJson({frame_id:7,state:{temperature:21.5}});
+  await h.context.pending;
+  assert.equal(h.run('lastFrame'),0);
+  assert.equal(h.element('api-state').hidden,true);
+  assert.equal(h.element('api-state').textContent,'');
+  assert.equal(h.element('run').disabled,true);
+}
+
+async function truthfulJsonState() {
+  const h=harness(); const state={temperature:21.5,note:'<img src=x onerror=evil()>'};
+  h.context.fetch=async url=>{
+    if (url.endsWith('/status')) return {ok:true,json:async()=>({session_id:'api-a',device_id:'API A',observation_kind:'json-state',latest_frame:7,intent:null,action:null})};
+    assert.equal(url,'/v1/sessions/api-a/observations/7');
+    return {ok:true,json:async()=>({frame_id:7,state})};
+  };
+  await h.run('token="operator";selectSession("api-a");poll();');
+  assert.equal(h.element('screen').hidden,true);
+  assert.equal(h.element('api-state').hidden,false);
+  assert.equal(h.element('api-state').textContent,JSON.stringify(state,null,2));
+  assert.equal(h.element('frame-label').textContent,'Stan JSON 7');
+  assert.equal(h.element('run').disabled,false);
+  assert.equal(h.run('currentObservation().frame'),7);
+  h.run('selectSession("desktop-b");');
+  assert.equal(h.element('api-state').hidden,true);
+  assert.equal(h.element('api-state').textContent,'');
+}
+
 (async()=>{
   await delayedStatus();
   await delayedImage();
   await noSessions();
-  console.log('PASS: delayed status, delayed screenshot and empty-session dashboard isolation');
+  await delayedJsonState();
+  await truthfulJsonState();
+  console.log('PASS: delayed status, PNG, JSON and empty-session isolation; JSON displayed as text, never a screenshot');
 })().catch(error=>{console.error(error);process.exitCode=1;});

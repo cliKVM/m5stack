@@ -1,0 +1,144 @@
+{
+  "schema": "poa.process/v1",
+  "process_ref": "poa://clikvm/process/android-observe-act/v1",
+  "title": "One bounded multidevice observe-plan-act-readback cycle",
+  "owner": "service:clikvm-gateway",
+  "input_schema_ref": "schema://clikvm/device/intent/v1",
+  "output_schema_ref": "schema://clikvm/device/result/v1",
+  "policy_refs": [
+    "policy://clikvm/device/session-lease/v1"
+  ],
+  "steps": [
+    {
+      "id": "observe",
+      "capability_ref": "capability://clikvm/device/observe/v1",
+      "kind": "command",
+      "effects": [
+        "read_data",
+        "local_write",
+        "remote_session"
+      ],
+      "depends_on": [],
+      "requires_approval": true,
+      "timeout_seconds": 60,
+      "max_attempts": 1,
+      "idempotency": "required",
+      "verification": [
+        {
+          "capability_ref": "capability://clikvm/device/observe/v1",
+          "expectation_schema_ref": "schema://clikvm/device/observe/v1"
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "capability_ref": "capability://clikvm/device/plan/v1",
+      "kind": "query",
+      "effects": [
+        "read_data",
+        "quota_consumption"
+      ],
+      "depends_on": [
+        "observe"
+      ],
+      "requires_approval": true,
+      "timeout_seconds": 60,
+      "max_attempts": 1,
+      "idempotency": "read_only",
+      "verification": [
+        {
+          "capability_ref": "capability://clikvm/device/plan/v1",
+          "expectation_schema_ref": "schema://clikvm/device/plan/v1"
+        }
+      ]
+    },
+    {
+      "id": "lease",
+      "capability_ref": "capability://clikvm/device/lease/v1",
+      "kind": "command",
+      "effects": [
+        "local_write"
+      ],
+      "depends_on": [
+        "plan"
+      ],
+      "requires_approval": false,
+      "timeout_seconds": 60,
+      "max_attempts": 1,
+      "idempotency": "required",
+      "verification": [
+        {
+          "capability_ref": "capability://clikvm/device/lease/v1",
+          "expectation_schema_ref": "schema://clikvm/device/lease/v1"
+        }
+      ]
+    },
+    {
+      "id": "execute",
+      "capability_ref": "capability://clikvm/device/execute/v1",
+      "kind": "command",
+      "effects": [
+        "external_write",
+        "remote_session"
+      ],
+      "depends_on": [
+        "lease"
+      ],
+      "requires_approval": true,
+      "timeout_seconds": 60,
+      "max_attempts": 1,
+      "idempotency": "unsupported",
+      "verification": [
+        {
+          "capability_ref": "capability://clikvm/device/execute/v1",
+          "expectation_schema_ref": "schema://clikvm/device/execute/v1"
+        }
+      ]
+    },
+    {
+      "id": "readback",
+      "capability_ref": "capability://clikvm/device/readback/v1",
+      "kind": "command",
+      "effects": [
+        "read_data",
+        "local_write",
+        "remote_session"
+      ],
+      "depends_on": [
+        "execute"
+      ],
+      "requires_approval": true,
+      "timeout_seconds": 60,
+      "max_attempts": 1,
+      "idempotency": "required",
+      "verification": [
+        {
+          "capability_ref": "capability://clikvm/device/readback/v1",
+          "expectation_schema_ref": "schema://clikvm/device/readback/v1"
+        }
+      ]
+    },
+    {
+      "id": "verify",
+      "capability_ref": "capability://clikvm/device/verify/v1",
+      "kind": "query",
+      "effects": [
+        "read_data",
+        "quota_consumption"
+      ],
+      "depends_on": [
+        "readback"
+      ],
+      "requires_approval": true,
+      "timeout_seconds": 60,
+      "max_attempts": 1,
+      "idempotency": "read_only",
+      "verification": [
+        {
+          "capability_ref": "capability://clikvm/device/verify/v1",
+          "expectation_schema_ref": "schema://clikvm/device/verify/v1"
+        }
+      ]
+    }
+  ]
+}

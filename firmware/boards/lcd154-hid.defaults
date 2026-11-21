@@ -1,0 +1,4 @@
+CONFIG_CLIK_BOARD_LCD154=y
+# External regulated host VBUS is required; the board cannot source it itself.
+CONFIG_CLIK_MODE_USB_HID=y
+CONFIG_TINYUSB_HID_COUNT=2

@@ -16,6 +16,9 @@ class Settings:
     # No built-in credentials. Provision distinct random tokens per physical unit.
     device_tokens: dict[str, str] = field(default_factory=dict)
     operator_token: str = ""
+    controller_tokens: dict[str, str] = field(default_factory=dict)
+    controller_targets: dict[str, str] = field(default_factory=dict)
+    target_online_seconds: int = 30
     allow_simulation: bool = False
     require_action_confirmation: bool = False
     max_frame_bytes: int = 4 * 1024 * 1024
@@ -51,6 +54,9 @@ class Settings:
             state_dir=Path(os.environ.get("CLIK_STATE_DIR", ".state/gateway")),
             device_tokens=raw,
             operator_token=os.environ.get("CLIK_OPERATOR_TOKEN", ""),
+            controller_tokens=json.loads(os.environ.get("CLIK_CONTROLLER_TOKENS_JSON", "{}")),
+            controller_targets=json.loads(os.environ.get("CLIK_CONTROLLER_TARGETS_JSON", "{}")),
+            target_online_seconds=int(os.environ.get("CLIK_TARGET_ONLINE_SECONDS", 30)),
             allow_simulation=_flag("CLIK_ALLOW_SIMULATION"),
             require_action_confirmation=_flag("CLIK_REQUIRE_ACTION_CONFIRMATION"),
             max_frame_bytes=int(os.environ.get("CLIK_MAX_FRAME_BYTES", 4194304)),
@@ -92,6 +98,24 @@ class Settings:
             raise ValueError("Every device must have a unique token")
         if self.operator_token and self.operator_token in self.device_tokens.values():
             raise ValueError("Operator token must differ from device tokens")
+        if not isinstance(self.controller_tokens, dict) or not isinstance(self.controller_targets, dict):
+            raise ValueError("Controller token and target configuration must be objects")
+        if set(self.controller_tokens) != set(self.controller_targets):
+            raise ValueError("Every controller credential requires exactly one configured target")
+        all_tokens = list(self.device_tokens.values()) + ([self.operator_token] if self.operator_token else [])
+        for controller_id, token in self.controller_tokens.items():
+            if not isinstance(controller_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", controller_id):
+                raise ValueError("Invalid controller ID")
+            if not isinstance(token, str) or len(token) < 24:
+                raise ValueError("Controller tokens must have at least 24 characters")
+            target = self.controller_targets[controller_id]
+            if not isinstance(target, str) or target not in self.device_tokens:
+                raise ValueError("Controller target needs its own configured device credential")
+            all_tokens.append(token)
+        if len(set(all_tokens)) != len(all_tokens):
+            raise ValueError("Operator, controller and device tokens must all differ")
+        if not 5 <= self.target_online_seconds <= 300:
+            raise ValueError("Target online timeout must be 5..300 seconds")
         for endpoint in [self.model_endpoint, self.poa_endpoint, self.stt_endpoint, self.tts_endpoint]:
             if not endpoint:
                 continue

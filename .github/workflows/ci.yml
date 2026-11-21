@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [cores3, lcd154, lcd154-touch]
+        profile: [cores3, lcd154, lcd154-touch, cores3-network, lcd154-network, lcd154-touch-network, cores3-hid, lcd154-hid, lcd154-touch-hid]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Compile complete ESP32-S3 application

@@ -1,4 +1,4 @@
-clikVM / M5Stack, version 0.1.0
+clikVM / M5Stack, version 0.2.0
 Project source is provided under the Apache License, Version 2.0.
 
 The display initialization table in
@@ -26,3 +26,7 @@ Public standard source licensing and upstream terms remain applicable.
 M5Stack, Espressif, Waveshare, Android, OQLLM and Wellmanifest are names of their
 respective projects or owners. This repository makes no certification or
 endorsement claim from those projects.
+
+USB HID device uses espressif/esp_tinyusb 1.7.6 (Apache-2.0) and TinyUSB
+(MIT). Their license texts are included in licenses/. Resolved versions
+and component hashes are pinned in firmware/dependencies.lock.

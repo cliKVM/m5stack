@@ -1,6 +1,8 @@
-# clikVM device protocol 0.1.0
+# clikVM device protocol 0.2.0
 
 This is the implemented **clikVM gateway API**, an adapter to deploy alongside OQLLM. These URLs are not claims about routes already deployed on `api.oqllm.com`. Runtime OpenAPI is at `/openapi.json`; interactive documentation is at `/docs`.
+
+The legacy Android flow below remains wire-compatible with 0.1.0. New target profiles, typed network API actions and JSON observations are specified in [UNIVERSAL.md](UNIVERSAL.md). Scoped M5 voice controls are specified in [CONTROLLERS.md](CONTROLLERS.md). The machine-readable implementation/physical-validation matrix is [compatibility.json](compatibility.json).
 
 ## Transport and credentials
 
@@ -24,7 +26,7 @@ Recovery codes are machine-readable in `X-Clik-Error-Code`: `session_expired` (4
 {"session_id":"cf579046-779e-4891-852a-17366df1a143","latest_frame":0,"expires_in_seconds":86400,"simulated":false}
 ```
 
-`adb` capability is required. Bootstrap AOA menus and Android PIN/RSA consent happen locally before this server session. Starting a new session supersedes the preceding session of the same device. Any old unacknowledged lease becomes uncertain and cannot be executed in the new session. Reboot/reconnect uses a new session; never resume cached coordinates blindly.
+For the legacy profile shown above, `adb` capability is required. Other transports register an explicit target profile as documented in UNIVERSAL.md. Bootstrap AOA menus and Android PIN/RSA consent happen locally before this server session. Starting a new session supersedes the preceding session of the same device. Any old unacknowledged lease becomes uncertain and cannot be executed in the new session. Reboot/reconnect uses a new session; never resume cached coordinates blindly.
 
 ### Upload an observation
 
@@ -95,8 +97,9 @@ Commands:
 | `open_url` | `url` | HTTP(S), ASCII/percent encoded, max 1024 chars |
 | `screenshot` | No extra fields | Capture on Android |
 | `wait` | `duration_ms` | 50–5000 ms |
+| `api` | `operation`, `arguments` | Only for declared non-ADB API operations; validated against the target catalog |
 
-The `text` limitation reflects Android shell `input text`, not STT or the user's intent language. Polish voice/intent text is preserved. Literal Unicode insertion needs a separately implemented Android IME/clipboard mechanism; it is deliberately rejected here. `%` is excluded because Android rewrites `%s` to a space. Firmware independently validates and shell-quotes commands. Arbitrary shell/model scripts are not part of this contract.
+The `text` limitation originated in Android shell `input text` and is intentionally retained across all 0.2 adapters; it does not restrict STT or the user's intent language. Polish voice/intent text is preserved. Literal Unicode insertion needs a separately implemented Android IME/clipboard mechanism; it is deliberately rejected here. `%` is excluded because Android rewrites `%s` to a space. Firmware independently validates and shell-quotes commands. Arbitrary shell/model scripts are not part of this contract.
 
 ### Acknowledge, then observe
 

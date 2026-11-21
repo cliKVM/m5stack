@@ -1,0 +1,17 @@
+{
+  "wheels": [
+    {
+      "file": "clikvm_m5stack-0.2.0-py3-none-any.whl",
+      "sha256": "0bc195ce46ed8dfa439248a3b114addd2f2e412561a29d1da8bb6bc1b43eb051",
+      "bytes": 47721,
+      "status": "PASS"
+    },
+    {
+      "file": "clikvm_node-0.2.0-py3-none-any.whl",
+      "sha256": "17ef23f520f889cf458eac39af2c526238daa295f7fe2e26ce9f32bf181d8fac",
+      "bytes": 21431,
+      "status": "PASS"
+    }
+  ],
+  "distribution": "source ZIP; wheels are validation artifacts"
+}

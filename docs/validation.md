@@ -1,118 +1,146 @@
 ---
 {
   "schema": "wellmanifest.docs/document/v1", "id": "clikvm-release-validation",
-  "kind": "information", "version": 1, "title": "Dowody walidacji wydania 0.1.0",
+  "kind": "information", "version": 2, "title": "Dowody walidacji wydania 0.2.0",
   "status": "draft", "owner": "clikVM/m5stack", "scope": "repository",
   "created": "2026-11-21", "updated": "2026-11-21", "review_after": "2026-12-21",
-  "evidence": ["analysis/firmware-builds.json", "analysis/software-tests.log", "../gateway/docs/verification-report.json"]
+  "evidence": ["analysis/firmware-builds.json", "analysis/software-tests.log", "../gateway/docs/verification-report.json", "../agents/desktop/verification-report.json"]
 }
 ---
 
-# Walidacja 0.1.0 — 21 listopada 2026
+# Walidacja 0.2.0 — 21 listopada 2026
 
-**Wykonano rzeczywiste kompilacje i testy programowe. Nie podłączono fizycznego
-CoreS3, Waveshare ani telefonu. Nie uruchomiono zapytań na prywatnych usługach
-modelowych użytkownika.** Wydanie jest gotowym punktem startowym kwalifikacji
-sprzętowej, nie certyfikatem produktu działającego z dowolnym Androidem.
+**Wykonano rzeczywiste kompilacje ESP-IDF, testy programowe i lokalne integracje
+TCP. Nie podłączono fizycznego CoreS3, Waveshare, telefonu ani pulpitu Windows,
+macOS lub X11. Nie użyto prywatnych produkcyjnych endpointów OQLLM.**
+Wydanie jest przygotowane do kwalifikacji konkretnego zestawu.
 
-## Pełne buildy ESP32-S3
+## Firmware: pełna macierz dziewięciu profili
 
-Użyto pobranego ESP-IDF **v5.4.2**, toolchainu Xtensa Espressif i rzeczywistych
-zależności z `firmware/dependencies.lock`. Kompilacja obejmuje `main`, board,
-cloud, USB, RSA i protokół, a nie sam parser lub atrapy nagłówków.
+ESP-IDF **5.4.2**, rzeczywisty toolchain Xtensa i przypięte managed components.
+Nowy HID korzysta z esp_tinyusb **1.7.6**, a dokładne wersje i hashe są
+w `firmware/dependencies.lock`. Wszystkie obrazy zgłaszają wersję **0.2.0**.
 
-| Profil | Wynik | Aplikacja | Ostrzeżenia kompilatora |
-|---|---|---:|---:|
-| CoreS3 / external BUS | PASS | 1 170 000 B | 0 |
-| Waveshare LCD-1.54 | PASS | 1 169 600 B | 0 |
-| Waveshare Touch-LCD-1.54 | PASS | 1 169 776 B | 0 |
-| Dodatkowy CoreS3: battery + TTS + HTTP LAN | PASS | 1 171 792 B | 0 |
+| Profil | Tryb | Rozmiar aplikacji | Wynik / ostrzeżenia |
+|---|---|---:|---|
+| `cores3` | android_usb_host | 1 171 600 B | PASS / 0 |
+| `lcd154` | android_usb_host | 1 171 200 B | PASS / 0 |
+| `lcd154-touch` | android_usb_host | 1 171 376 B | PASS / 0 |
+| `cores3-network` | network_controller | 1 108 112 B | PASS / 0 |
+| `lcd154-network` | network_controller | 1 108 240 B | PASS / 0 |
+| `lcd154-touch-network` | network_controller | 1 108 416 B | PASS / 0 |
+| `cores3-hid` | usb_hid_device | 1 135 664 B | PASS / 0 |
+| `lcd154-hid` | usb_hid_device | 1 135 376 B | PASS / 0 |
+| `lcd154-touch-hid` | usb_hid_device | 1 135 568 B | PASS / 0 |
 
-Wariant dodatkowy sprawdza kompilację alternatywnych gałęzi. Standardowa paczka
-zawiera trzy podstawowe obrazy, z TTS oraz HTTP LAN domyślnie wyłączonymi.
-Piny i elektryczne działanie wariantu battery nadal wymagają własnego HIL.
+Dziesiąty build sprawdził dodatkowe gałęzie **HID + TTS + self-powered**:
+PASS, 0 ostrzeżeń. Ma celowo nieustawiony monitor VBUS (`GPIO -1`), przez co
+blokuje start USB. To dowód kompilacji gałęzi, a nie obraz użytkowy; nie jest
+pakowany do katalogu `binaries/` wydania.
+
+W standardowych dziewięciu obrazach TTS jest wyłączone, a gateway wymaga HTTPS.
+Wariant HID jest domyślnie bus-powered. Testy elektryczne oraz podłączenie USB
+pozostają NOT_RUN. App flash offset to **0x20000**, bootloader **0x0**, partycje
+**0x8000**; używaj `flash_args` danego profilu.
 
 [firmware-builds.json](analysis/firmware-builds.json) zawiera hashe binariów,
-hash każdego pliku źródłowego firmware i ścieżki zachowanych logów kompilacji.
-Bootloader trafia pod `0x0`, partycje pod `0x8000`, aplikacja pod **`0x20000`**.
-Nie wykonano flashowania ani sprawdzenia czasu rzeczywistego na MCU.
+44 plików źródłowych firmware i mapę profili do logów. Źródła oraz binaria
+ponownie porównano z dowodami przed pakowaniem.
 
-## Gateway i protokół
+## Testy gatewaya, wykonawców i protokołów
 
-Końcowe `make test` wykonane w głównym środowisku zakończyło się exit 0.
-Pełny output: [software-tests.log](analysis/software-tests.log).
+Ostatni zbiorczy `make test` po `make setup`: **exit 0**. Pełny zapis:
+[software-tests.log](analysis/software-tests.log).
 
-| Kontrola | Wynik i zakres |
-|---|---|
-| API/gateway | **30/30 PASS**: autoryzacja, obrazy, planner, akcje, retry, lease, restart, replay, retencja, STT/TTS i panel |
-| Audyt Wellmanifest | **4/4 PASS**: oficjalny schemat, hashe, mutacje i niepoprawne wejścia |
-| Natywny protokół C | **6 grup PASS**, 490 podziałów/roundtripów pakietów, dokładne MPS, 50 000 uszkodzonych wejść |
-| Shell quoting | **6 rzeczywistych przypadków `/bin/sh` PASS**; zachowanie argumentów, bez wykonania wstrzykniętego polecenia |
-| Symulator urządzenia | PASS na prawdziwym lokalnym TCP/HTTP; syntetyczne PNG i skryptowy HOME |
-| Panel: DOM + HTTP | **7/7 PASS** z jsdom, w tym wyścig zmiany urządzenia i chronione obrazy |
-| Kanoniczne kontrakty | **5/5 PASS**: piny, rejestracja, POA operacje/proces i koperta Logs |
-| Przypięte źródła upstream | **9/9 SHA-256 PASS** w odrębnej kontroli online |
+| Kontrola | Wynik | Zakres |
+|---|---|---|
+| Gateway | **46/46 PASS** | Android 0.1, profile, kontrolery, JSON/API, sesje, leases, idempotencja, autoryzacja, restart i replay |
+| Audyt Logs | **4/4 PASS** | Kanoniczny schemat, hashchain, mutacje i niepoprawne wejścia |
+| Desktop/RFB/API | **27/27 PASS** | Wykonawcy, journal, świeżość, realny TCP, utrata ACK i awarie wejścia |
+| Natywny protokół C | **6 grup PASS** | 490 fragmentowanych roundtripów, exact MPS, checksum i 50 000 uszkodzonych wejść |
+| Shell quoting | **6/6 PASS** | Rzeczywisty `/bin/sh`, zachowanie argumentów, brak wykonania wstrzykniętych komend |
+| Kanoniczne standardy | **5/5 PASS** | 15 rekordów POA, 8 logicznych akcji, 2 procesy, piny i Logs |
+| Pakowanie Python | **2 wheel PASS** | Gateway i clikvm-node z metadanymi 0.2.0 |
 
-AddressSanitizer i UndefinedBehaviorSanitizer były aktywne w testach C.
-Wyłączono wyłącznie LeakSanitizer, ponieważ nie działa pod ptrace w tym
-środowisku. Testy gatewaya pokazały ostrzeżenie deprecacji testowego adaptera
-Starlette/httpx; żaden test nie został z tego powodu pominięty.
+Testy desktopowe obejmują trzy kompletne pętle z właściwym Uvicorn gatewayem
+oraz kontrolowanym serwerem modelowym. RFB i API używają rzeczywistych socketów
+TCP i HTTP. Native wykonuje prawdziwą ścieżkę kodu, lecz granica API pulpitu
+jest jawną atrapą. To nie jest fizyczna walidacja danego OS.
 
-Zbudowano również rzeczywisty pakiet Python wheel i sprawdzono obecność CLI,
-API oraz wszystkich trzech plików panelu. Przypięte wersje zależności z tego
-środowiska znajdują się w `requirements.lock`. Skrypt `scripts/firmware.sh`
-sprawdzono na pełnym profilu CoreS3; zachował hash zweryfikowanego obrazu.
+Osobno wykonano prawdziwe CLI `doctor`: RFB i HTTP API na lokalnych serwerach
+kontrolnych oraz prawidłową odmowę native bez X11 DISPLAY. Dowody:
+[raport node](../agents/desktop/verification-report.json),
+[capability probes](../agents/desktop/verification/capability-probes.json).
 
-Raport [gateway verification](../gateway/docs/verification-report.json)
-wiąże wyniki z hashami plików gatewaya. Testy dostawców używają kontrolowanego
-transportu HTTP: sprawdzają format wysyłanego obrazu/audio i interpretację
-odpowiedzi, ale nie jakość modelu ani dostępność płatnego API.
+### Błędy wykryte i zamknięte podczas przeglądu
 
-DOM harness jest odtwarzalny w `tests/frontend`. Nie sprawdza wyglądu przeglądarki.
-Osobna próba Chromium została zablokowana przez środowisko przy tworzeniu socketu;
-**rendered browser NOT_RUN**. Nie przedstawiamy wyników DOM jako screenshotu
-gotowej strony ani testu dotyku na LCD.
+- **X11, wiele monitorów:** mismatch rozmiaru X root i przechwytywanego monitora
+  blokuje rejestrację, obserwację lub wejście; nie skaluje kliknięcia na drugi ekran.
+- **RFB, częściowe wysłanie press:** cleanup obejmuje także raport, którego wynik
+  wysłania jest niepewny. Podejmowane są próby wszystkich release, a niepewny
+  transport jest zamykany. Testy obejmują błąd pierwszego press i późniejszego release.
+- **Zmieniona sesja podczas głosu:** expected_session_id powstrzymuje wykonanie
+  celu na nowej sesji. Oddzielny token kontrolera nie może przyznać sobie lease.
+- **PNG/JSON w panelu:** spóźniona odpowiedź poprzedniego urządzenia nie zastępuje
+  aktualnego widoku; stan JSON nie jest przedstawiany jako sztuczny screenshot.
+
+Szczegółowy [raport gatewaya](../gateway/docs/verification-report.json) oraz
+raport node wiążą wyniki z hashami źródeł. ASan i UBSan były aktywne w testach C;
+LeakSanitizer wyłączono z powodu środowiska ptrace. Ostrzeżenie testowego
+Starlette/httpx nie powodowało pomijania testów.
+
+## Panel operatora
+
+**7/7 bramek DOM + live HTTP PASS**. Dowody: [frontend-tests.log](analysis/frontend-tests.log)
+i [browser-contract-check.json](analysis/browser-contract-check.json). Końcowa
+kontrola wykryła wyścig testu capture: handler uruchamiał fetch bez zwracania Promise.
+Handlery capture/cancel zwracają teraz łańcuch Promise, a test celowo zatrzymuje
+POST i sprawdza flagę przed oraz po jego zakończeniu, bez sztucznego sleep.
+Po poprawce ponownie przeszło 46 testów gatewaya i 7 bramek DOM/HTTP.
+Ten harness sprawdza rzeczywisty JavaScript i HTTP, nie wygląd renderowanej przeglądarki. Osobna strona SET ma własne kontrole wizualne;
+nie są one dowodem działania sprzętu ani panelu gatewaya.
 
 ## Rzeczywisty Wellman
 
-Uruchomiono Wellman **0.23.2**, przypięty do źródłowego commita.
-`wellman check --root . --json` zwraca **exit 1 / valid=false: 9 błędów,
-1 ostrzeżenie**. Wyniku tego nie zamieniono na PASS.
+Rzeczywisty Wellman **0.23.2**, z przypiętej rewizji upstream:
+`wellman check --root . --json` daje **exit 1, valid=false, 9 błędów i 1 ostrzeżenie**.
+Raport: [wellman-check.json](analysis/wellman-check.json).
 
-- 7 błędów: checker procesu POA oczekuje innych pól niż zamknięty kanoniczny schemat.
-- 1 błąd: profil LLM wymaga Subactor/MCP, a rzeczywista integracja to OQLLM/HTTPS.
-- 1 błąd: brak infrastruktury niezależnych grantów i uprawnień floty.
-- 1 ostrzeżenie: brak pełnego zarządzanego `manifest.lock.json`.
+- 7 błędów: checker POA oczekuje pól innych niż zamknięty kanoniczny schemat.
+- 1 błąd: brak wymaganego upstream profilu LLM Subactor/MCP; integracja projektu
+  faktycznie używa skonfigurowanych usług OQLLM/HTTP.
+- 1 błąd: brak infrastruktury authority-lifecycle niezależnych grantów floty.
+- 1 ostrzeżenie: brak zarządzanego manifest.lock.
 
-Osobno zidentyfikowano niepasujący do partycji factory binarny schemat SemVer
-oraz brak zweryfikowanego runtime URTLog. Lokalne hashe i katalog operacji nie
-są przedstawiane jako rozwiązanie tych luk. [standards.md](standards.md)
-zawiera przyczyny, dokładne kontrakty i przypięte źródła.
+Dodatkowo pozostają jawne luki URT runtime oraz embedded-release SemVer
+wymagający partycji OTA zamiast używanej factory. Nie zmieniono upstream
+schematów dla uzyskania zielonego wyniku. Lokalna walidacja nie jest certyfikatem
+pełnej adopcji floty. Szczegóły: [standards.md](standards.md).
 
-## Pozostałe niewykonane kontrole
+## Niewykonane kontrole
 
-| Obszar | Status | Co go zamknie |
+| Obszar | Status | Potrzebny dowód |
 |---|---|---|
-| VBUS, CC, zasilanie CoreS3/Waveshare | NOT_RUN | Pomiary rzeczywistego toru i stabilność pod obciążeniem |
-| AOA, RSA, ADB i Android OEM | NOT_RUN | Właściwy telefon, kabel i świadoma autoryzacja |
-| LCD, dotyk, mikrofony i głośnik | NOT_RUN | Próby fizycznej rewizji urządzenia |
-| Model, STT, TTS na prywatnym OQLLM | NOT_RUN | Rzeczywiste endpointy i własne klucze dostępu |
-| Docker/Caddy | NOT_RUN lokalnie | Uruchomienie Compose lub pierwszego workflow CI |
-| GitHub push, Actions i ochrona gałęzi | NOT_RUN | Uwierzytelniony dostęp do `clikVM/m5stack` |
+| VBUS, CC, zasilanie, LCD/audio i USB host/device | NOT_RUN | Prawdziwa płytka, rewizja, przewód, pomiary i scenariusze HIL |
+| Android AOA/RSA/ADB i OEM | NOT_RUN | Własny telefon, autoryzacja i test działań z obrazem |
+| Native Windows/macOS/X11 | NOT_RUN | Rzeczywista sesja, zgody, skalowanie i geometria ekranu |
+| Konkretny serwer VNC z TLS/tunelem | NOT_RUN | Produkt/wersja, autoryzacja, obraz i wejście |
+| Produkcyjne HTTP API/Home Assistant | NOT_RUN | Własny kontrakt, encja i weryfikacja efektu |
+| OQLLM model, STT, TTS | NOT_RUN | Rzeczywiste endpointy, uprawnienia i jakość odpowiedzi |
+| Docker/Caddy runtime | NOT_RUN | Start obrazów i HTTPS w środowisku z Dockerem |
+| GitHub push, Actions, branch protection | NOT_RUN | Uwierzytelniony dostęp do docelowych repozytoriów |
 
-Repozytorium Git przygotowano lokalnie. `gh auth status` nie wykazuje logowania,
-a publiczny odczyt docelowego repo zwracał 404. Nie twierdzimy, że projekt został
-opublikowany lub że wymagane checks ustawiono na GitHub.
+Pełne kompilacje oraz testy lokalnego TCP nie wypełniają żadnego z tych wierszy.
+Kryteria są w [hardware-validation.md](hardware-validation.md),
+[controller-modes.md](controller-modes.md) i [desktop-agent.md](desktop-agent.md).
 
-## Zasada wydania
+## Wydanie i historia
 
-Paczka zawiera sources, trzy obrazy, bootloadery, partycje, `flash_args`,
-`release-manifest.json`, `SHA256SUMS` i opcjonalny lokalny `repository.bundle`.
-Manifest ma jawny format projektu `clikvm.release/v1`, commit, wersję, rozmiary,
-hashe i `hardware_validated:false`. Nie jest podpisanym poświadczeniem floty.
-Skrypt odrzuca zmienione źródła firmware, inny obraz niż zweryfikowany oraz
-przypadkowo śledzone sekrety. ZIP jest ponownie odczytywany i sprawdzany CRC.
+Paczka obejmuje źródła, dziewięć obrazów, bootloadery, partycje, flash_args,
+release-manifest.json, SHA256SUMS i lokalny repository.bundle. Manifest
+`clikvm.release/v1` podaje commit, wersje, profile, hashe oraz
+`hardware_validated:false`. Skrypt pakujący odrzuca rozbieżność źródeł/binariów
+z dowodami i przypadkowo śledzone sekrety. ZIP sprawdzany jest przez CRC.
 
-Przed pokazem klientowi przejdź wszystkie H01–H10 w
-[hardware-validation.md](hardware-validation.md) na jednym konkretnym zestawie.
-Zapisz dowody i dopiero wtedy zmieniaj statusy danego zestawu na PASS.
+Raporty 0.1 zachowano w `analysis/v0.1/`; identyfikują historyczny stan i nie
+są przedstawiane jako wynik kodu 0.2. Poprzednia paczka pozostaje odrębna.

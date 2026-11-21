@@ -1,3 +1,3 @@
-"""clikVM: typed Android actions over a direct ESP32-to-server transport."""
+"""clikVM: scoped multidevice actions, observations and M5 voice controls."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

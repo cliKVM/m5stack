@@ -1,13 +1,13 @@
 ---
 {
   "schema": "wellmanifest.docs/document/v1", "id": "clikvm-limitations",
-  "kind": "information", "version": 1, "title": "Zakres i ograniczenia 0.1",
+  "kind": "information", "version": 2, "title": "Zakres i ograniczenia 0.2",
   "status": "draft", "owner": "clikVM/m5stack", "scope": "repository",
   "created": "2026-11-21", "updated": "2026-11-21", "review_after": "2026-12-21"
 }
 ---
 
-# Zakres i ograniczenia wersji 0.1
+# Zakres i ograniczenia wersji 0.2
 
 ## Implementacja a kwalifikacja produktu
 
@@ -18,6 +18,9 @@ Wszystkie scenariusze HIL pozostają NOT_RUN. Zmiana tego statusu wymaga dowodó
 z [procedury kwalifikacji](hardware-validation.md).
 
 ## Android i USB
+
+Wybór kanału dla komputerów i API opisuje [universal-system.md](universal-system.md).
+Profil platformy nie stanowi deklaracji działania z każdą wersją OS.
 
 AOA HID zależy od telefonu i jego konfiguracji. Daje wejście klawiatury/myszy
 bez uprzedniego ADB, ale nie daje obrazu. Właściciel musi widzieć telefon podczas
@@ -42,7 +45,8 @@ optical fallback. Aplikacje z ochroną przechwytywania mogą dawać pusty/zablok
 obraz. Android opisuje ograniczenia np. dla
 [`FLAG_SECURE`](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#FLAG_SECURE).
 
-Dozwolone typy akcji: tap, swipe, key, text, open_url, wait i screenshot.
+Dozwolone typy akcji Androida: tap, swipe, key, text, open_url, wait i screenshot.
+Kontrakt uniwersalny dodaje ósmą akcję `api`, wyłącznie dla zadeklarowanych operacji.
 Nie ma dowolnego shella, instalacji APK, przesyłania plików MTP, automatycznego
 instalatora heyasa na każdej platformie ani protokołu ADB przez BLE/Wi-Fi.
 Możliwe jest otwarcie strony HTTP(S), ale decyzje przeglądarki dotyczące instalacji
@@ -58,6 +62,47 @@ Pauza zatrzymuje przyszłe kroki, lecz nie cofa już przesłanej akcji i nie
 przerywa natychmiast blokującej transmisji USB/STT. Wynik wykonanej akcji jest
 potwierdzany również podczas pauzy. Po uncertain wymagane jest rozstrzygnięcie
 z aktualnego obrazu; po restarcie nie ma automatycznego odtwarzania kliknięć.
+
+## Komputery, RFB i API
+
+`clikvm-node` implementuje native Windows/macOS/Linux X11, klienta RFB oraz
+stałe HTTP API. Testy protokołu i kontrolowanych serwerów TCP nie potwierdzają
+działania wszystkich fizycznych pulpitów ani produktów VNC. Agent wymaga
+instalacji na kontrolowanym komputerze albo dostępu do istniejącej usługi.
+Nie ma automatycznej instalacji po wpięciu M5 w dowolny USB.
+
+Native działa w aktywnej sesji użytkownika. Uprawnienia, skalowanie/DPI,
+układ monitorów i blokady pulpitu podlegają kontroli; nieznana geometria
+blokuje wejście. macOS wymaga zgód systemowych. Nie ma obsługi portalu Wayland,
+secure desktop Windows, ekranu logowania ani BIOS. Native nie deklaruje
+ogólnego sterowania wieloma monitorami. Szczegóły: [desktop-agent.md](desktop-agent.md).
+
+RFB obsługuje tylko opisany podzbiór protokołu/uwierzytelnienia. Nie jest
+klientem RDP, SPICE ani gotowym adapterem dowolnego produktu KVM. Deklaracja
+Androida dla RFB jest odrzucana z powodu niepotwierdzonej semantyki nawigacji.
+Chronione połączenie TLS/tunel należy skonfigurować. Szczegóły: [network-kvm.md](network-kvm.md).
+
+HTTP API odczytuje JSON z ustalonego originu i wykonuje nazwane operacje ze
+schematami argumentów. Nie tworzy screenshotu i nie daje wizualnego KVM.
+Powodzenie odpowiedzi HTTP nie zastępuje ponownego odczytu stanu celu.
+Przykładowy Home Assistant wymaga własnej encji, uprawnień i kwalifikacji.
+
+## Kontroler sieciowy i USB HID device
+
+Kontroler sieciowy ma osobny token i statyczne przypisanie do celu w gatewayu.
+Nie wyszukuje urządzeń automatycznie i nie wybiera dowolnego celu po nazwie
+wypowiedzianej przez użytkownika. Zmiana sesji w trakcie nagrywania blokuje
+stare polecenie. Bez obserwacji nie ma autonomicznego planu.
+
+USB HID device oferuje ręczny KM z lokalnego panelu oraz odrębny frontend
+głosowy do wykonawcy sieciowego. **Nie ma automatycznego routingu planera
+obrazu do surowego HID.** Wymagałby on spójnego powiązania kanałów obrazu
+i wejścia. HID nie przechwytuje ekranu PC ani telefonu.
+
+Host Androida i urządzenie HID to osobne obrazy. Nie mogą działać równocześnie
+na tym samym wewnętrznym PHY USB. Domyślny HID jest bus-powered; CoreS3
+z baterią lub DIN wymaga monitora VBUS i jawnego self-powered builda.
+Wszystkie szczegóły oraz scenariusze HIL są w [controller-modes.md](controller-modes.md).
 
 ## Audio, modele i sieć
 
@@ -81,7 +126,7 @@ wymaga jawnego builda developerskiego.
 SQLite i blokada stanu wymagają jednego procesu. Media mają limit/retencję,
 natomiast niezmienny dziennik wymaga monitorowania rozmiaru i polityki archiwizacji.
 Brak OTA, Secure Boot, szyfrowania NVS, zdalnej floty i kont wielu operatorów
-w standardowej konfiguracji 0.1.
+w standardowej konfiguracji 0.2.
 
 Kanoniczne POA i Logs oraz lokalne testy przechodzą. Zbiorczy `wellman check`
 nie przechodzi w całości: różnice POA checkera, profil Subactor/MCP i wymagania

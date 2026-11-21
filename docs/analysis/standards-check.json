@@ -9,5 +9,8 @@
     "wellmanifest.logs/event/v1-example"
   ],
   "events_checked": 0,
+  "operation_records": 15,
+  "logical_action_types": 8,
+  "processes_checked": 2,
   "scope": "offline extracted contracts and producer output; no fleet certification or hardware attestation"
 }

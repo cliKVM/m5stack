@@ -33,9 +33,25 @@ test_literal_android_text_rejects_unicode_percent_and_control (test_gateway.Upst
 test_poa_only_routes_never_dispatches (test_gateway.UpstreamTests.test_poa_only_routes_never_dispatches) ... ok
 test_synthetic_device_over_real_tcp_http (test_gateway_http.RealHTTPTests.test_synthetic_device_over_real_tcp_http) ... ok
 test_switching_devices_cannot_reuse_previous_frame (test_gateway_ui.DashboardIsolationTests.test_switching_devices_cannot_reuse_previous_frame) ... ok
+test_controller_audio_uses_own_scope_and_exact_cache (test_gateway_universal.UniversalGatewayTests.test_controller_audio_uses_own_scope_and_exact_cache) ... ok
+test_controller_goal_forces_fresh_observation_and_retry_is_exact (test_gateway_universal.UniversalGatewayTests.test_controller_goal_forces_fresh_observation_and_retry_is_exact) ... ok
+test_controller_is_scoped_and_cannot_lease_or_forge_observation (test_gateway_universal.UniversalGatewayTests.test_controller_is_scoped_and_cannot_lease_or_forge_observation) ... ok
+test_controller_online_status_tracks_connector_contact (test_gateway_universal.UniversalGatewayTests.test_controller_online_status_tracks_connector_contact) ... ok
+test_controller_rejects_target_restart_during_voice (test_gateway_universal.UniversalGatewayTests.test_controller_rejects_target_restart_during_voice) ... ok
+test_controller_tokens_must_be_unique_and_bind_existing_target (test_gateway_universal.UniversalGatewayTests.test_controller_tokens_must_be_unique_and_bind_existing_target) ... ok
+test_desktop_without_adb_has_real_profile_and_platform_prompt (test_gateway_universal.UniversalGatewayTests.test_desktop_without_adb_has_real_profile_and_platform_prompt) ... ok
+test_init_env_provisions_separate_scoped_tokens_without_overwrite (test_gateway_universal.UniversalGatewayTests.test_init_env_provisions_separate_scoped_tokens_without_overwrite) ... ok
+test_json_api_unknown_operation_or_invalid_arguments_never_lease (test_gateway_universal.UniversalGatewayTests.test_json_api_unknown_operation_or_invalid_arguments_never_lease) ... ok
+test_json_observations_replay_and_retention (test_gateway_universal.UniversalGatewayTests.test_json_observations_replay_and_retention) ... ok
+test_json_state_loop_uses_allowed_api_schema_and_confirmation (test_gateway_universal.UniversalGatewayTests.test_json_state_loop_uses_allowed_api_schema_and_confirmation) ... ok
+test_km_only_never_claims_an_observation_or_autonomy (test_gateway_universal.UniversalGatewayTests.test_km_only_never_claims_an_observation_or_autonomy) ... ok
+test_profile_rejects_external_schema_refs_and_false_capabilities (test_gateway_universal.UniversalGatewayTests.test_profile_rejects_external_schema_refs_and_false_capabilities) ... ok
+test_unavailable_rfb_capability_is_not_queued (test_gateway_universal.UniversalGatewayTests.test_unavailable_rfb_capability_is_not_queued) ... ok
+test_v01_database_migrates_without_losing_android_state (test_gateway_universal.UniversalGatewayTests.test_v01_database_migrates_without_losing_android_state) ... ok
+test_v01_ledger_rows_upcast_during_replay (test_gateway_universal.UniversalGatewayTests.test_v01_ledger_rows_upcast_during_replay) ... ok
 
 ----------------------------------------------------------------------
-Ran 30 tests in 3.636s
+Ran 46 tests in 5.479s
 
 OK
 PYTHONPATH=gateway .venv/bin/python -m unittest discover -s gateway/tests -p 'test_audit.py' -v
@@ -45,7 +61,40 @@ test_invalid_inputs_fail_before_persistence (test_audit.AuditContractTests.test_
 test_tampering_and_extra_fields_are_detected (test_audit.AuditContractTests.test_tampering_and_extra_fields_are_detected) ... ok
 
 ----------------------------------------------------------------------
-Ran 4 tests in 0.129s
+Ran 4 tests in 0.047s
+
+OK
+PYTHONPATH=gateway:agents/desktop .venv/bin/python -m unittest discover -s tests/desktop -v
+test_external_paths_and_schema_references_are_rejected (test_backends.APITests.test_external_paths_and_schema_references_are_rejected) ... ok
+test_gateway_profile_and_observation_bounds_fail_locally (test_backends.APITests.test_gateway_profile_and_observation_bounds_fail_locally) ... ok
+test_real_http_state_action_and_observation (test_backends.APITests.test_real_http_state_action_and_observation) ... ok
+test_redirect_is_not_followed (test_backends.APITests.test_redirect_is_not_followed) ... ok
+test_schema_operation_and_url_injection_rejected_before_mutation (test_backends.APITests.test_schema_operation_and_url_injection_rejected_before_mutation) ... ok
+test_scaled_coordinates_match_logical_primary_display (test_backends.NativeContractTests.test_scaled_coordinates_match_logical_primary_display) ... ok
+test_unknown_action_fields_and_unsupported_text_are_rejected (test_backends.NativeContractTests.test_unknown_action_fields_and_unsupported_text_are_rejected) ... ok
+test_wayland_is_not_misrepresented_as_full_desktop_control (test_backends.NativeContractTests.test_wayland_is_not_misrepresented_as_full_desktop_control) ... ok
+test_x11_multi_monitor_root_mismatch_blocks_registration_and_input (test_backends.NativeContractTests.test_x11_multi_monitor_root_mismatch_blocks_registration_and_input) ... ok
+test_actual_tcp_fragmented_screenshot_click_keys_all_versions (test_backends.RFBTests.test_actual_tcp_fragmented_screenshot_click_keys_all_versions) ... ok
+test_each_observation_requires_fully_refreshed_pixels (test_backends.RFBTests.test_each_observation_requires_fully_refreshed_pixels) ... ok
+test_out_of_bounds_rectangle_rejected (test_backends.RFBTests.test_out_of_bounds_rectangle_rejected) ... ok
+test_partial_press_and_release_failures_attempt_cleanup_and_close_transport (test_backends.RFBTests.test_partial_press_and_release_failures_attempt_cleanup_and_close_transport) ... ok
+test_plaintext_and_none_require_explicit_configuration (test_backends.RFBTests.test_plaintext_and_none_require_explicit_configuration) ... ok
+test_resize_requires_full_new_frame (test_backends.RFBTests.test_resize_requires_full_new_frame) ... ok
+test_rfb_cannot_claim_url_launcher_or_outside_coordinates (test_backends.RFBTests.test_rfb_cannot_claim_url_launcher_or_outside_coordinates) ... ok
+test_vnc_password_challenge_over_real_tcp (test_backends.RFBTests.test_vnc_password_challenge_over_real_tcp) ... ok
+test_http_api_tcp_to_gateway_json_observation_roundtrip (test_gateway_integration.GatewayIntegrationTests.test_http_api_tcp_to_gateway_json_observation_roundtrip) ... ok
+test_native_code_path_with_gui_boundary_fixture_real_gateway_tcp (test_gateway_integration.GatewayIntegrationTests.test_native_code_path_with_gui_boundary_fixture_real_gateway_tcp) ... ok
+test_rfb_tcp_to_gateway_tcp_roundtrip (test_gateway_integration.GatewayIntegrationTests.test_rfb_tcp_to_gateway_tcp_roundtrip) ... ok
+test_duplicate_completed_lease_is_acknowledged_without_input (test_runner.RunnerTests.test_duplicate_completed_lease_is_acknowledged_without_input) ... ok
+test_expired_lease_is_failed_before_backend_input (test_runner.RunnerTests.test_expired_lease_is_failed_before_backend_input) ... ok
+test_lost_http_ack_retries_same_result_without_repeating_input (test_runner.RunnerTests.test_lost_http_ack_retries_same_result_without_repeating_input) ... ok
+test_request_roundtrip_reduces_remaining_lease_before_input (test_runner.RunnerTests.test_request_roundtrip_reduces_remaining_lease_before_input) ... ok
+test_restart_marks_unfinished_execution_uncertain_never_reexecutes (test_runner.RunnerTests.test_restart_marks_unfinished_execution_uncertain_never_reexecutes) ... ok
+test_single_owner_and_target_binding (test_runner.RunnerTests.test_single_owner_and_target_binding) ... ok
+test_stale_frame_is_failed_before_backend_input (test_runner.RunnerTests.test_stale_frame_is_failed_before_backend_input) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 11.822s
 
 OK
 ASAN_OPTIONS=detect_leaks=0 sh tests/native/run.sh
@@ -63,5 +112,8 @@ PASS: 6 actual POSIX-shell argument-preservation cases (no command injection)
     "wellmanifest.logs/event/v1-example"
   ],
   "events_checked": 0,
+  "operation_records": 15,
+  "logical_action_types": 8,
+  "processes_checked": 2,
   "scope": "offline extracted contracts and producer output; no fleet certification or hardware attestation"
 }

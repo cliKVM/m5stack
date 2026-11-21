@@ -54,9 +54,20 @@ async function main() {
   for(let i=0;i<30;i++){await w.__contractHarness.poll();if($('status').textContent.includes('Zadanie zakończone'))break;await sleep(50);}
   assert($('status').textContent.includes('Zadanie zakończone'));
   pass('Live dashboard handlers: intent, confirmation, HTTP lease, result, fresh frame and done state');
-  await $('capture').onclick();
+  // Hold the actual POST so the async handler cannot accidentally appear done
+  // merely because loopback HTTP happens to be fast. The capture flag must not
+  // exist before dispatch, and must exist after the handler's returned promise.
+  deferred=`/v1/sessions/${sid}/capture`;release=null;
+  const capturePending=$('capture').onclick();
+  assert(capturePending && typeof capturePending.then==='function');
+  let captureSettled=false;capturePending.then(()=>captureSettled=true);
+  for(let i=0;i<20&&!release;i++)await sleep(10);
+  assert(release);
+  assert.strictEqual((await api(`/v1/sessions/${sid}/actions/next`,{})).capture_requested,false);
+  assert.strictEqual(captureSettled,false);
+  release();await capturePending;
   assert((await api(`/v1/sessions/${sid}/actions/next`,{})).capture_requested);
-  pass('Dashboard capture button reaches authenticated gateway capture flag');
+  pass('Delayed dashboard capture POST completes before handler resolves; authenticated flag changes only after dispatch');
   await sleep(50);
   for(let i=0;i<100 && w.__contractHarness.isPolling();i++)await sleep(10);
   assert(!w.__contractHarness.isPolling());

@@ -2,7 +2,7 @@
 """Package committed sources, firmware and explicit evidence without local secrets.
 
 This emits clikvm.release/v1, not an upstream Wellmanifest conformance claim.
-Run after the source commit and all three firmware builds. See docs/standards.md.
+Run after the source commit and all nine firmware builds. See docs/standards.md.
 """
 from __future__ import annotations
 
@@ -18,7 +18,8 @@ import tomllib
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-PROFILES = ("cores3", "lcd154", "lcd154-touch")
+PROFILES = tuple(board + suffix for suffix in ("", "-network", "-hid")
+                 for board in ("cores3", "lcd154", "lcd154-touch"))
 
 
 def git(*args: str) -> bytes:
@@ -74,6 +75,7 @@ def main() -> None:
         content[f"binaries/{profile}/sdkconfig.built"] = compiled_config.read_bytes()
         components.append({
             "component_id": profile, "tier": "microcontroller_firmware", "version": version,
+            "board": recorded["board"], "mode": recorded["mode"],
             "git_commit": commit, "chip": "esp32s3", "idf_version": "5.4.2",
             "sha256": sha(app), "image_size_bytes": len(app), "target_partition": "factory",
             "flash_files": offsets, "hardware_validated": False,
@@ -88,7 +90,9 @@ def main() -> None:
         "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source_commit": commit, "repository": "https://github.com/clikVM/m5stack.git",
         "components": components,
-        "compatibility": {"gateway": version, "firmware": version, "device_api": "v1"},
+        "compatibility": {"gateway": version, "firmware": version, "desktop_node": version,
+                          "device_api": "v1", "controller_api": "v1",
+                          "matrix": "gateway/docs/compatibility.json"},
         "validation": {
             "hardware_validated": False, "live_provider_validated": False,
             "full_wellman_conformance": False,

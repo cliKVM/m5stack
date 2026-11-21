@@ -1,17 +1,27 @@
-# clikVM / M5Stack — hey Asa dla Androida
+# clikVM / M5Stack — hey Asa dla telefonu, komputera i urządzeń API
 
-**Wersja 0.1.0 — komplet źródeł aplikacji, firmware i dokumentacji; wydanie do kwalifikacji na sprzęcie.**
+**Wersja 0.2.0 — gateway, wykonawcy desktop/RFB/API, dziewięć profili firmware i dokumentacja; wydanie do kwalifikacji na sprzęcie.**
 
-Kontroler ESP32-S3 obsługuje Androida przez USB, wysyła obraz ekranu do gatewaya
-i wykonuje ograniczone polecenia zaplanowane przez model. Mikrofony i głośnik
-kontrolera umożliwiają zadania głosowe. Docelowe repozytorium:
+Kontroler ESP32-S3 zbiera zadanie głosowe, a hey Asa obserwuje urządzenie,
+wykonuje dozwolony krok i sprawdza wynik. Kanał dostępu dobieramy do sprzętu:
+ADB/AOA dla Androida, agent systemowy dla Windows/macOS/Linux X11, RFB/VNC
+dla zgodnego serwera albo kontrakt HTTP API dla usługi sieciowej. Docelowe repozytorium:
 [`clikVM/m5stack`](https://github.com/clikVM/m5stack).
 
-Projekt zawiera rzeczywistą implementację **AOA HID → autoryzowane ADB → obraz →
-plan → akcja → nowy obraz**, serwer Python, panel operatora, lokalny panel KM
-na ESP32, symulator HTTP, testy, konfiguracje kompilacji oraz adopcję kontraktów
-Wellmanifest. Nie wymaga aplikacji z Google Play do sterowania przez ADB.
-Pierwsze włączenie debugowania i potwierdzenie klucza RSA należą do właściciela telefonu.
+Projekt zawiera rzeczywiste adaptery, panel operatora, lokalny panel KM,
+kontroler głosowy z osobnym tokenem, testy protokołów i adopcję kontraktów
+Wellmanifest. Obserwacja może być PNG albo stanem JSON. **Samo HID nie daje
+obrazu i nie jest pełnym KVM.** Bez obserwacji gateway blokuje autonomiczny plan.
+
+Na Androidzie ADB nie wymaga aplikacji z Google Play; właściciel włącza debugowanie
+i zatwierdza RSA. Na komputerze obraz dostarcza agent lub istniejący serwer VNC.
+Zakres nie obejmuje dowolnego zablokowanego urządzenia, portalu Wayland, iOS KVM
+ani przechwytywania BIOS przez sam M5Stack.
+
+Zacznij od [wyboru architektury](docs/universal-system.md),
+[agenta desktopowego](docs/desktop-agent.md) i [trybów kontrolera](docs/controller-modes.md).
+Ścieżka strony objaśniającej rozwiązanie: `heyasa/let-heyasa-com`, domena docelowa
+`set.heyasa.com`; publikacja strony jest odrębna od wdrożenia prywatnego gatewaya.
 
 ## Stan wydania
 
@@ -20,6 +30,10 @@ Pierwsze włączenie debugowania i potwierdzenie klucza RSA należą do właści
 | Gateway, panel, autoryzacja, kolejka, zdarzenia i replay | Implementacja; testy w `tests/` |
 | ESP-IDF 5.4.2, CoreS3 / LCD-1.54 / Touch-1.54 | Źródła i osobne profile; wynik kompilacji w raporcie walidacji |
 | AOA HID i ADB RSA/shell-v2/screencap | Własny klient USB; testy parsera na komputerze, pełna kompilacja |
+| Windows / macOS / Linux X11 | Agent `clikvm-node`: screenshot, klawiatura, mysz; realna sesja OS wymaga kwalifikacji |
+| RFB/VNC 3.3/3.7/3.8 | Klient z ograniczonym framebufferem, autoryzacją i obsługą fragmentacji; testy prawdziwego TCP |
+| HTTP API | Oddzielny stan JSON, stały origin, operacje ze schematami argumentów, brak dowolnego URL z modelu |
+| M5Stack sieciowy / HID device | Osobne profile, scoped controller API oraz TinyUSB KM; brak automatycznego łączenia HID z obrazem innego adaptera |
 | STT/TTS i model obrazu | Adaptery wymagające rzeczywistych endpointów i kluczy operatora |
 | Wellmanifest | Kanoniczne schematy POA i Logs, hashchain, przypięte źródła i jawne luki Wellmana |
 | Telefon, USB-C/VBUS, LCD i audio na płytce | **HIL NOT_RUN** — brak fizycznego sprzętu w środowisku przygotowania |
@@ -30,7 +44,25 @@ Szczegółowe dowody: [walidacja wydania](docs/validation.md),
 Zielona kompilacja i symulator nie potwierdzają współpracy konkretnego telefonu
 z konkretnym adapterem USB.
 
-## Jak działa
+## Jak działa — wspólny cykl
+
+```mermaid
+flowchart TD
+    M["M5Stack: głos i przycisk"] --> G["Gateway: cel, sesja i zakres"]
+    O["Panel operatora"] --> G
+    G --> P["OQLLM / model: kolejny krok"]
+    P --> V["Walidacja akcji i świeżej obserwacji"]
+    V --> X["Wykonawca: ADB, desktop, RFB lub API"]
+    X --> S["Nowy obraz albo stan JSON"]
+    S --> G
+```
+
+Każda sesja deklaruje platformę, transport, rodzaj obserwacji, akcje i klawisze.
+Token kontrolera ma stałe przypisanie do celu; nie daje uprawnień operatora.
+Zmiana sesji w czasie nagrywania przerywa zlecenie zamiast wysłać je do nowego celu.
+Po niepewnej akcji nie ma automatycznej powtórki kliknięcia.
+
+### Android — zachowana ścieżka USB host
 
 ```mermaid
 flowchart TD
@@ -88,7 +120,49 @@ python3 -m venv .venv
 .venv/bin/clikvm --env-file .env serve --host 127.0.0.1 --port 8787
 ```
 
-## Pierwsze uruchomienie kontrolera
+## Komputer i kontroler głosowy
+
+Na nowym wdrożeniu gatewaya utwórz osobne tożsamości:
+
+```sh
+.venv/bin/clikvm init-env --device office-pc --controller m5-01
+```
+
+Nie uruchamiaj generatora ponownie nad istniejącym `.env`. Dla kolejnego stanowiska
+dopisz odrębny token urządzenia do `CLIK_DEVICE_TOKENS_JSON`, kontrolera do
+`CLIK_CONTROLLER_TOKENS_JSON` oraz powiązanie do `CLIK_CONTROLLER_TARGETS_JSON`.
+Nie kopiuj tokena operatora do firmware ani agenta.
+
+Na kontrolowanym komputerze z Python 3.11+, z katalogu tego projektu:
+
+```sh
+python3 -m venv .venv-node
+.venv-node/bin/python -m pip install -e 'agents/desktop[native,rfb]'
+cp agents/desktop/examples/native.json node.json
+cp agents/desktop/examples/node.env.example node.env
+chmod 600 node.env
+```
+
+Ustaw `gateway_url` i `device_id` w `node.json`, a przypisany temu urządzeniu
+token w `node.env` jako `CLIK_NODE_TOKEN`. Następnie:
+
+```sh
+.venv-node/bin/clikvm-node --config node.json --env-file node.env doctor
+.venv-node/bin/clikvm-node --config node.json --env-file node.env run
+```
+
+`doctor` faktycznie odczytuje ekran/stan; nie klika. Na Windows użyj
+`.venv-node\Scripts\clikvm-node.exe` i poleceń PowerShell z
+[instrukcji agenta](docs/desktop-agent.md). macOS wymaga Screen Recording
+i Accessibility; Linux bezpośrednio obsługuje X11. RFB oraz HTTP API mają
+osobne przykłady w `agents/desktop/examples/` i nie wymagają biblioteki native.
+
+M5Stack wgraj profilem `cores3-network` (lub właściwym `lcd154*-network`).
+W panelu konfiguracji wpisz ID `m5-01` i **token kontrolera**. Głos, capture,
+cancel i TTS kierowane są do przypisanego `office-pc` przez gateway. Dostęp do
+serwera z Wi-Fi wymaga wdrożonego HTTPS; `127.0.0.1` wskazuje lokalny komputer.
+
+## Pierwsze uruchomienie kontrolera Androida
 
 1. Wybierz rzeczywisty model: **M5Stack CoreS3 K128**, Waveshare
    **ESP32-S3-LCD-1.54 SKU 33867** albo **Touch SKU 33869**.
@@ -148,8 +222,9 @@ make standards
 ```
 
 - `.governance/manifest.json`: rejestracja profilu `runtime-service`.
-- `.governance/poa-operations.json`: katalog siedmiu akcji, generowany z modeli.
+- `.governance/poa-operations.json`: 15 rekordów — osiem uniwersalnych akcji i siedem zgodnych URI Androida.
 - `.governance/poa.json`: proces obserwacja–akcja–weryfikacja.
+- `.governance/poa-multidevice.json`: proces dla ekranów i stanów JSON.
 - `.governance/standards.lock.json`: przypięte rewizje i hashe źródeł.
 - `gateway/clikvm/audit.py`: rzeczywiste koperty Logs, kolejność i hashchain.
 - SQLite: transakcyjne zdarzenia, pięć odtwarzalnych projekcji, idempotencja.
@@ -166,9 +241,11 @@ pełnej zgodności floty Wellman**. Szczegóły: [standards.md](docs/standards.m
 | `firmware/main` | Start, konfiguracja Wi-Fi, panel lokalny, pętla zadania |
 | `firmware/components/clik_board` | LCD, dotyk/BOOT, audio i zasilanie |
 | `firmware/components/clik_usb` | USB host, AOA HID, ADB i klucz RSA w NVS |
+| `firmware/components/clik_hid` | USB device: klawiatura, mysz, watchdog zwolnienia i VBUS |
 | `firmware/components/clik_protocol` | Parsery i ograniczone komendy, testowalne na komputerze |
 | `firmware/components/clik_cloud` | HTTPS, sesja, streaming PNG, akcje i audio |
 | `gateway/clikvm` | API, planner, adaptery upstream, SQLite, audyt, panel |
+| `agents/desktop/clikvm_node` | Native, RFB, HTTP API, sesja, dzierżawy i dziennik wykonania |
 | `tests` | Testy API, HTTP, panelu i natywnego protokołu |
 | `.governance` | Adopcja Wellmanifest i przypięte kontrakty |
 | `docs` | Architektura, sprzęt, wdrożenie, walidacja i decyzje |
@@ -181,7 +258,7 @@ na tym samym katalogu SQLite; blokada właściciela stanu tego zabrania.
 Backup obejmuje bazę oraz zachowane obrazy, a nie tylko eksport JSONL.
 Instrukcja: [deployment.md](docs/deployment.md).
 
-Wersja 0.1.0 nie zawiera automatycznej instalacji dowolnego programu na Androidzie,
+Wersja 0.2.0 nie zawiera automatycznej instalacji dowolnego programu na Androidzie,
 obejścia ekranów zaufania, przechwytywania chronionych ekranów, zdalnego ADB po Wi-Fi,
 strumienia wideo ani sterownika kamery. Obsługuje pojedynczy telefon na kontroler.
 Pełen zakres: [limitations.md](docs/limitations.md).

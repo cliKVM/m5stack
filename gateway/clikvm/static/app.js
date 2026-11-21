@@ -1,7 +1,7 @@
 "use strict";
 const $ = id => document.getElementById(id);
 let token = "", sid = "", lastFrame = 0, blobUrl = "", latest = null, polling = false, generation = 0;
-const labels = {planning:"Analizuję ekran",awaiting_action:"Wykonuję działanie",awaiting_frame:"Czekam na nowy zrzut",done:"Zadanie zakończone",blocked:"Potrzebna pomoc użytkownika",failed:"Wystąpił błąd",cancelled:"Zadanie zatrzymane"};
+const labels = {planning:"Analizuję stan",awaiting_action:"Wykonuję działanie",awaiting_frame:"Czekam na nową obserwację",done:"Zadanie zakończone",blocked:"Potrzebna pomoc użytkownika",failed:"Wystąpił błąd",cancelled:"Zadanie zatrzymane"};
 
 async function api(path, method="GET", body=undefined) {
   const headers = {Authorization:"Bearer " + token};
@@ -24,6 +24,7 @@ function selectSession(value) {
   if (blobUrl) URL.revokeObjectURL(blobUrl);
   blobUrl = "";
   $("screen").removeAttribute("src"); $("screen").hidden = true; $("empty").hidden = false;
+  $("api-state").textContent = ""; $("api-state").hidden = true;
   $("approval").hidden = true; $("uncertain").hidden = true; $("simulation").hidden = true;
   $("run").disabled = true; $("capture").disabled = !sid; $("cancel").disabled = !sid;
   $("frame-label").textContent = ""; $("command").textContent = "";
@@ -39,7 +40,7 @@ async function refresh() {
   for (const s of result.sessions) {
     if (s.status !== "active") continue;
     const option = document.createElement("option");
-    option.value = s.session_id; option.textContent = s.device_id + (s.simulated ? " · SYMULACJA" : "");
+    option.value = s.session_id; option.textContent = s.device_id + (s.profile?.platform ? " · " + s.profile.platform : "") + (s.simulated ? " · SYMULACJA" : "");
     $("sessions").append(option);
   }
   if ([...$("sessions").options].some(o => o.value === previous)) $("sessions").value = previous;
@@ -62,19 +63,32 @@ async function poll() {
     $("command").textContent = state.action ? JSON.stringify(state.action.command,null,2) : "";
     $("run").disabled = true;
     if (state.latest_frame && state.latest_frame !== lastFrame) {
-      const frameResponse = await api(`/v1/sessions/${selected}/frames/${state.latest_frame}`);
-      if (!valid()) return;
-      const blob = await frameResponse.blob();
-      if (!valid()) return;
-      const next = URL.createObjectURL(blob);
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-      blobUrl = next; $("screen").src = blobUrl;
-      $("screen").hidden = false; $("empty").hidden = true;
+      if (state.observation_kind === "json-state") {
+        const stateResponse = await api(`/v1/sessions/${selected}/observations/${state.latest_frame}`);
+        if (!valid()) return;
+        const observation = await stateResponse.json();
+        if (!valid() || observation.frame_id !== state.latest_frame) return;
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        blobUrl = ""; $("screen").removeAttribute("src"); $("screen").hidden = true;
+        $("api-state").textContent = JSON.stringify(observation.state,null,2);
+        $("api-state").hidden = false;
+      } else {
+        const frameResponse = await api(`/v1/sessions/${selected}/frames/${state.latest_frame}`);
+        if (!valid()) return;
+        const blob = await frameResponse.blob();
+        if (!valid()) return;
+        const next = URL.createObjectURL(blob);
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        blobUrl = next; $("screen").src = blobUrl;
+        $("screen").hidden = false; $("api-state").hidden = true;
+      }
+      $("empty").hidden = true;
       lastFrame = state.latest_frame;
-      $("frame-label").textContent = "Zrzut " + lastFrame;
+      $("frame-label").textContent = (state.observation_kind === "json-state" ? "Stan JSON " : "Zrzut ") + lastFrame;
     }
     if (!valid()) return;
-    $("run").disabled = !lastFrame || lastFrame !== state.latest_frame;
+    $("run").disabled = state.observation_kind === "none" || !lastFrame || lastFrame !== state.latest_frame;
+    $("capture").disabled = state.observation_kind === "none";
     $("approval").hidden = state.action?.state !== "awaiting_confirmation" || state.action.based_on_frame !== lastFrame;
     $("approval-text").textContent = state.action?.reason || "";
     $("uncertain").hidden = state.action?.state !== "uncertain";
@@ -84,7 +98,7 @@ async function poll() {
 }
 function currentObservation() {
   if (!sid || !latest || latest.session_id !== sid || !lastFrame || latest.latest_frame !== lastFrame) {
-    throw Error("Poczekaj na aktualny zrzut wybranego urządzenia.");
+    throw Error("Poczekaj na aktualną obserwację wybranego urządzenia.");
   }
   return {session:sid, frame:lastFrame, action:latest.action};
 }
@@ -100,8 +114,8 @@ $("intent").onsubmit = async e => {
   try { const view = currentObservation(); await api(`/v1/sessions/${view.session}/intent`,"POST",{text:$("goal").value,frame_id:view.frame}); await poll(); }
   catch (e) { error(e); }
 };
-$("capture").onclick = () => { if (sid) api(`/v1/sessions/${sid}/capture`,"POST",{}).then(poll).catch(error); };
-$("cancel").onclick = () => { if (sid) api(`/v1/sessions/${sid}/cancel`,"POST",{}).then(poll).catch(error); };
+$("capture").onclick = () => { if (sid) return api(`/v1/sessions/${sid}/capture`,"POST",{}).then(poll).catch(error); };
+$("cancel").onclick = () => { if (sid) return api(`/v1/sessions/${sid}/cancel`,"POST",{}).then(poll).catch(error); };
 async function confirmAction(approve) {
   try {
     const view = currentObservation();

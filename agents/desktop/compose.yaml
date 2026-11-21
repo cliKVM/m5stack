@@ -1,0 +1,19 @@
+services:
+  node:
+    build:
+      context: ../..
+      dockerfile: agents/desktop/Dockerfile
+    init: true
+    restart: unless-stopped
+    env_file: .env.node
+    volumes:
+      - ./node.json:/config/node.json:ro
+      - node-state:/state
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  node-state:

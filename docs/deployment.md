@@ -16,8 +16,10 @@ można uruchomić obok OQLLM i wystawić pod osobną domeną HTTPS. Nie wymaga U
 ani dostępu do telefonu po stronie serwera. ESP32 realizuje USB lokalnie.
 
 `CLIK_MODEL_ENDPOINT` i endpointy audio są osobnymi integracjami. Konfiguracja
-serwera nie udostępnia kluczy modelu płytce. Płytka ma jedynie unikalny token
-urządzenia, a panel operatora odrębny token o szerszych uprawnieniach.
+serwera nie udostępnia kluczy modelu płytce. Profil Android host ma token
+urządzenia, a network/HID ma odrębny token kontrolera przypisany do celu.
+Panel operatora ma własny token o szerszych uprawnieniach. Kontrakt i generator
+opisuje [CONTROLLERS.md](../gateway/docs/CONTROLLERS.md).
 
 ## Docker Compose
 
@@ -110,7 +112,7 @@ nie zawiera całych treści domenowych i nie zastępuje kopii bazy.
 
 Limit 256 MiB dotyczy prywatnych mediów; utrzymywane jest domyślnie 8 klatek
 na sesję. **Nie ogranicza on wzrostu kanonicznego dziennika SQLite i eksportów.**
-Wersja 0.1 nie ma automatycznej archiwizacji/przycinania event store. Monitoruj
+Wersja 0.2 nie ma automatycznej archiwizacji/przycinania event store. Monitoruj
 dysk i ustal okres przechowywania, zanim obsłużysz wiele urządzeń przez długi czas.
 
 Tokeny i dane Wi-Fi w standardowym buildzie NVS nie są szyfrowane at rest.

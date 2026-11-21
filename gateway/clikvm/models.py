@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Annotated, Literal, Union
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
+from .capabilities import TargetProfile, bounded_json
 
 
 class Strict(BaseModel):
@@ -12,7 +13,8 @@ class Strict(BaseModel):
 
 class SessionStart(Strict):
     boot_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:-]+$")
-    capabilities: list[Literal["adb", "aoa_hid", "microphone", "speaker", "display"]] = Field(max_length=5)
+    capabilities: list[Annotated[str, Field(min_length=1, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")]] = Field(max_length=32)
+    profile: TargetProfile | None = None
     simulated: bool = False
 
 
@@ -79,7 +81,36 @@ class Wait(Strict):
     duration_ms: int = Field(default=500, ge=50, le=5000)
 
 
-Action = Annotated[Union[Tap, Swipe, Key, Text, OpenUrl, Screenshot, Wait], Field(discriminator="type")]
+class ApiAction(Strict):
+    type: Literal["api"]
+    operation: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:-]+$")
+    arguments: dict[str, JsonValue] = Field(default_factory=dict)
+
+    @field_validator("arguments")
+    @classmethod
+    def bounded_arguments(cls, value):
+        return bounded_json(value, 8192)
+
+
+class JsonObservation(Strict):
+    frame_id: int = Field(ge=1, le=2**31-1)
+    state: dict[str, JsonValue]
+
+    @field_validator("state")
+    @classmethod
+    def bounded_state(cls, value):
+        return bounded_json(value, 60000)
+
+
+class ControllerGuard(Strict):
+    expected_session_id: str | None = Field(default=None, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:-]+$")
+
+
+class ControllerIntent(ControllerGuard):
+    text: str = Field(min_length=1, max_length=4000)
+
+
+Action = Annotated[Union[Tap, Swipe, Key, Text, OpenUrl, Screenshot, Wait, ApiAction], Field(discriminator="type")]
 
 
 class Plan(Strict):
@@ -144,7 +175,7 @@ class ActionLease(Strict):
     valid_for_ms: int = Field(ge=0, le=120000)
     command: Action
     operation_uri: str
-    after_action: Literal["screenshot"]
+    after_action: Literal["screenshot", "observation"]
 
 
 class NextActionResponse(Strict):

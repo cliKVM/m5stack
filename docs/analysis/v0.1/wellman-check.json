@@ -1,0 +1,80 @@
+{
+  "root": "/workspace/scratch/1b24ef4efda6/projects/m5stack",
+  "valid": false,
+  "error_count": 9,
+  "warning_count": 1,
+  "findings": [
+    {
+      "code": "GOV-LOCK-MISSING",
+      "message": "Missing .governance/manifest.lock.json",
+      "severity": "WARNING",
+      "path": "",
+      "remediation": "Use the managed wellmanifest/new-project adoption flow to generate a lockfile."
+    },
+    {
+      "code": "GOV-AUTHORITY-LIFECYCLE-MISSING",
+      "message": "Repository requires wellmanifest/authority-lifecycle but no lease or authority-lifecycle profile was found.",
+      "severity": "ERROR",
+      "path": ".governance/authority-lifecycle.json",
+      "remediation": "Provide .governance/authority-lifecycle.json or canonical .subactor/leases/*.json change-lease records."
+    },
+    {
+      "code": "GOV-LLM-MISSING",
+      "message": "Repository requires wellmanifest/llm but no .wellmanifest/llm.json or .governance/llm.json profile was found.",
+      "severity": "ERROR",
+      "path": ".wellmanifest/llm.json",
+      "remediation": "Provide .wellmanifest/llm.json conforming to wellmanifest.llm-profile/v1."
+    },
+    {
+      "code": "GOV-POA-INVALID",
+      "message": ".governance/poa.json must declare non-empty 'process_id' or 'id'.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Set process_id."
+    },
+    {
+      "code": "GOV-POA-STEP",
+      "message": "Step 'observe' in .governance/poa.json must declare 'action' or 'operation'.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Bind step action/operation."
+    },
+    {
+      "code": "GOV-POA-STEP",
+      "message": "Step 'plan' in .governance/poa.json must declare 'action' or 'operation'.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Bind step action/operation."
+    },
+    {
+      "code": "GOV-POA-STEP",
+      "message": "Step 'lease' in .governance/poa.json must declare 'action' or 'operation'.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Bind step action/operation."
+    },
+    {
+      "code": "GOV-POA-STEP",
+      "message": "Step 'execute' in .governance/poa.json must declare 'action' or 'operation'.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Bind step action/operation."
+    },
+    {
+      "code": "GOV-POA-STEP",
+      "message": "Step 'readback' in .governance/poa.json must declare 'action' or 'operation'.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Bind step action/operation."
+    },
+    {
+      "code": "GOV-POA-STEP",
+      "message": "Step 'verify' in .governance/poa.json must declare 'action' or 'operation'.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Bind step action/operation."
+    }
+  ],
+  "validation_scope": "implemented-checks",
+  "runtime_enforcement": "not_checked"
+}

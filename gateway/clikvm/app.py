@@ -18,7 +18,8 @@ from pathlib import Path
 
 from .config import Settings
 from .models import (ActionResult, Confirmation, IntentRequest, Resolution, RouteRequest, SessionStart, SpeakRequest,
-                     SessionCreated, FrameAccepted, IntentCreated, NextActionResponse, ResultAccepted)
+                     SessionCreated, FrameAccepted, IntentCreated, NextActionResponse, ResultAccepted, JsonObservation, ControllerIntent, ControllerGuard)
+from .capabilities import TargetProfile, profile_for, validate_command
 from .store import Store, canonical, identifier, png_dimensions
 from .upstream import Upstreams
 
@@ -33,6 +34,18 @@ class Principal:
         return "operator" if self.operator else "device:" + str(self.device_id)
 
 
+@dataclass(frozen=True)
+class ControllerPrincipal:
+    controller_id: str
+    device_id: str
+    operator: bool = False
+    expected_session_id: str | None = None
+
+    @property
+    def actor(self):
+        return "controller:" + self.controller_id
+
+
 class BodyLimitMiddleware:
     def __init__(self, app, settings: Settings):
         self.app, self.settings = app, settings
@@ -41,7 +54,10 @@ class BodyLimitMiddleware:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         path = scope.get("path", "")
-        limit = self.settings.max_frame_bytes if path.endswith("/frames") else self.settings.max_audio_bytes if path.endswith("/audio/stt") else 16384
+        limit = (self.settings.max_frame_bytes if path.endswith("/frames") else
+                 self.settings.max_audio_bytes if path.endswith("/audio/stt") else
+                 65536 if path.endswith("/observations") else
+                 131072 if path.startswith("/v1/devices/") and path.endswith("/sessions") else 16384)
         headers = dict(scope.get("headers", []))
         try:
             length = int(headers.get(b"content-length", b"0"))
@@ -68,6 +84,7 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
     upstream = Upstreams(settings, upstream_client)
     planning_slots = asyncio.Semaphore(4)
     audio_serial = asyncio.Lock()
+    last_seen: dict[str, float] = {}
 
     @asynccontextmanager
     async def lifespan(app):
@@ -76,9 +93,10 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
         await upstream.close()
         store.close()
 
-    app = FastAPI(title="clikVM Device Gateway", version="0.1.0", lifespan=lifespan,
-                  description="Typed ESP32 Android controller API. All media and device operations require scoped authorization.")
+    app = FastAPI(title="clikVM Device Gateway", version="0.2.0", lifespan=lifespan,
+                  description="Capability-driven Android, desktop, KVM and network-device API. All media and device operations require scoped authorization.")
     app.state.store, app.state.settings, app.state.upstream = store, settings, upstream
+    app.state.last_seen = last_seen
     app.add_middleware(BodyLimitMiddleware, settings=settings)
     bearer = HTTPBearer(auto_error=False)
 
@@ -118,6 +136,16 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
     def session_for(sid: str, principal: Principal, active=True):
         return store.get_session(sid, principal.device_id, active)
 
+    def mark_online(sid):
+        last_seen[sid] = time.monotonic()
+
+    def is_online(sid):
+        return time.monotonic() - last_seen.get(sid, float("-inf")) <= settings.target_online_seconds
+
+    def operation_uri(profile, kind):
+        namespace = "android" if profile.transport == "android-adb" else "device"
+        return "proc://clikvm/" + namespace + "/" + kind + "/v1"
+
     def public_action(row):
         if row is None:
             return None
@@ -134,7 +162,10 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
                 try:
                     session = store.get_session(sid)
                     frame = store.get_frame(sid, intent["frame_id"])
-                    png = (store.frames_dir / (frame["digest"] + ".png")).read_bytes()
+                    profile = profile_for(session)
+                    media = store.observation_path(frame).read_bytes()
+                    png = media if frame["kind"] == "png" else None
+                    observed_state = json.loads(media) if frame["kind"] == "json" else None
                 except (HTTPException, OSError) as exc:
                     with store.transaction():
                         store.db.execute("UPDATE intents SET status='failed',detail='observation_unavailable' WHERE id=?", (intent_id,))
@@ -145,7 +176,8 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
                            for r in store.db.execute("SELECT * FROM actions WHERE intent_id=? ORDER BY created DESC LIMIT 8", (intent_id,)).fetchall()][::-1]
             try:
                 plan = await upstream.plan(goal=intent["goal"], png=png, width=frame["width"], height=frame["height"],
-                                           history=history, simulated=bool(session["simulated"]), step=intent["steps"])
+                                           history=history, simulated=bool(session["simulated"]), step=intent["steps"],
+                                           profile=profile, state=observed_state)
                 with store.transaction():
                     current = store.get_session(sid)
                     current_intent = store.db.execute("SELECT * FROM intents WHERE id=?", (intent_id,)).fetchone()
@@ -159,19 +191,20 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
                         store.event("intent_" + plan.status, sid, {"intent_id": intent_id})
                     else:
                         command = plan.action.model_dump()
+                        operation_confirmation = validate_command(profile, command)
                         for xname, yname in [("x", "y"), ("x2", "y2")]:
                             if xname in command and (command[xname] >= frame["width"] or command[yname] >= frame["height"]):
                                 raise HTTPException(502, "Planner coordinates outside the current screenshot")
                         if store.active_action(sid):
                             raise HTTPException(409, "An action is already active")
-                        confirmation = plan.requires_confirmation or (settings.require_action_confirmation and command["type"] not in {"screenshot", "wait"})
+                        confirmation = operation_confirmation or plan.requires_confirmation or (settings.require_action_confirmation and command["type"] not in {"screenshot", "wait"})
                         aid = identifier()
                         state = "awaiting_confirmation" if confirmation else "queued"
                         store.db.execute("INSERT INTO actions(id,session_id,intent_id,frame_id,command,reason,confirmation,state,created,expires) VALUES(?,?,?,?,?,?,?,?,?,?)",
                                          (aid, sid, intent_id, intent["frame_id"], canonical(command), plan.reason, int(confirmation), state, time.time(), time.time()+settings.action_ttl_seconds))
                         store.db.execute("UPDATE intents SET status='awaiting_action',steps=steps+1 WHERE id=?", (intent_id,))
                         store.event("action_proposed", sid, {"action_id": aid, "intent_id": intent_id, "based_on_frame": intent["frame_id"],
-                                                            "operation_uri": "proc://clikvm/android/" + command["type"] + "/v1", "requires_confirmation": bool(confirmation)})
+                                                            "operation_uri": operation_uri(profile, command["type"]), "requires_confirmation": bool(confirmation)})
             except Exception as exc:
                 # Persist a bounded diagnostic; never leak provider bodies/credentials.
                 detail = str(exc.detail) if isinstance(exc, HTTPException) else type(exc).__name__
@@ -198,7 +231,7 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
 
     @app.get("/health")
     def health():
-        return {"ok": True, "service": "clikvm-gateway", "version": "0.1.0",
+        return {"ok": True, "service": "clikvm-gateway", "version": "0.2.0",
                 "event_export": "deferred" if store.export_error else "ok"}
 
     @app.post("/v1/devices/{device_id}/sessions",response_model=SessionCreated)
@@ -207,8 +240,20 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             raise HTTPException(403, "Use the matching device credential to start a session")
         if body.simulated and not settings.allow_simulation:
             raise HTTPException(403, "Simulation is disabled")
-        if "adb" not in body.capabilities:
-            raise HTTPException(422, "Start the server session after ADB is ready")
+        if body.profile is None and "adb" not in body.capabilities:
+            raise HTTPException(422, "Legacy Android session requires ADB; other transports require a target profile")
+        profile = body.profile or TargetProfile()
+        if profile.transport == "android-adb" and "adb" not in body.capabilities:
+            raise HTTPException(422, "Start an ADB session only after ADB is ready")
+        if profile.observation_kind == "screenshot" and profile.transport != "android-adb" and "screenshot" not in body.capabilities:
+            raise HTTPException(422, "Screenshot profile requires a probed screenshot capability")
+        if profile.observation_kind == "json-state" and "api_state" not in body.capabilities:
+            raise HTTPException(422, "JSON observation requires api_state capability")
+        if profile.transport != "android-adb":
+            required = {"tap":"mouse", "swipe":"mouse", "key":"keyboard", "text":"keyboard",
+                        "open_url":"open_url", "api":"api_operation"}
+            if any(required[action] not in body.capabilities for action in profile.action_types if action in required):
+                raise HTTPException(422, "Target action types require matching probed capabilities")
         def apply():
             old = store.db.execute("SELECT id FROM sessions WHERE device_id=? AND status='active'", (device_id,)).fetchall()
             for row in old:
@@ -217,18 +262,20 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
                 store.db.execute("UPDATE actions SET state=CASE WHEN state='leased' THEN 'uncertain' ELSE 'cancelled' END WHERE session_id=? AND state IN ('queued','leased','awaiting_confirmation')", (row["id"],))
                 store.event("session_superseded", row["id"], {})
             sid = identifier()
-            store.db.execute("INSERT INTO sessions(id,device_id,boot_id,simulated,capabilities,status,created,expires) VALUES(?,?,?,?,?,'active',?,?)",
-                             (sid, device_id, body.boot_id, int(body.simulated), canonical(body.capabilities), time.time(), time.time()+settings.session_ttl_seconds))
-            store.event("session_started", sid, {"device_id": device_id, "simulated": body.simulated, "capabilities": body.capabilities})
+            store.db.execute("INSERT INTO sessions(id,device_id,boot_id,simulated,capabilities,status,created,expires,profile) VALUES(?,?,?,?,?,'active',?,?,?)",
+                             (sid, device_id, body.boot_id, int(body.simulated), canonical(body.capabilities), time.time(), time.time()+settings.session_ttl_seconds, canonical(profile.model_dump())))
+            store.event("session_started", sid, {"device_id": device_id, "simulated": body.simulated, "capabilities": body.capabilities,
+                                                "profile_sha256":hashlib.sha256(canonical(profile.model_dump()).encode()).hexdigest()})
             return {"session_id": sid, "latest_frame": 0, "expires_in_seconds": settings.session_ttl_seconds, "simulated": body.simulated}
-        result=store.mutation(principal.actor, key, "session_start:"+device_id, body.model_dump(), apply)[0]
+        result=store.mutation(principal.actor, key, "session_start:"+device_id, body.model_dump(exclude_none=True), apply)[0]
+        mark_online(result["session_id"])
         store.prune_frames()
         return result
 
     @app.get("/v1/sessions")
     def list_sessions(principal=Depends(operator)):
         with store.lock:
-            return {"sessions": [dict(r) for r in store.db.execute("SELECT id AS session_id,device_id,simulated,status,latest_frame,active_intent,created,expires FROM sessions ORDER BY created DESC LIMIT 100")]}
+            return {"sessions": [{**dict(r), "profile":json.loads(r["profile"]), "online":is_online(r["session_id"])} for r in store.db.execute("SELECT id AS session_id,device_id,simulated,status,latest_frame,active_intent,created,expires,profile FROM sessions ORDER BY created DESC LIMIT 100")]}
 
     @app.get("/v1/sessions/{sid}/status")
     def status(sid: str, principal=Depends(auth)):
@@ -239,6 +286,10 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             result = {"session_id": sid, "device_id": session["device_id"], "status": session["status"], "simulated": bool(session["simulated"]),
                       "latest_frame": session["latest_frame"], "capture_requested": bool(session["capture_requested"]),
                       "intent": dict(intent) if intent else None, "action": public_action(action)}
+            profile = profile_for(session)
+            result.update(profile=profile.model_dump(), observation_kind=profile.observation_kind,
+                          platform=profile.platform, transport=profile.transport, online=is_online(sid),
+                          capabilities=json.loads(session["capabilities"]))
             result["state"] = intent["status"] if intent else "idle"
             result["message"] = (intent["detail"] if intent else "") or (action["reason"] if action else "") or "Gotowy na polecenie"
         return result
@@ -251,7 +302,9 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
                            x_height: int | None = Header(default=None, alias="X-Height"),
                            principal=Depends(auth), key=Depends(idem)):
         with store.lock:
-            session_for(sid, principal)
+            session = session_for(sid, principal)
+            if profile_for(session).observation_kind != "screenshot":
+                raise HTTPException(415, "Target does not expose a screenshot observation")
         if not 1 <= x_frame_id <= 2**31-1:
             raise HTTPException(422, "Frame ID must be 1..2147483647")
         if request.headers.get("content-type", "").split(";")[0] != "image/png":
@@ -284,6 +337,8 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
         result, cached = store.mutation(principal.actor,key,"frame:"+sid,{"frame_id":x_frame_id,"digest":digest,"width":x_width,"height":x_height},apply)
         if result["planning_intent"] and not cached:
             background.add_task(make_plan,sid,result["planning_intent"])
+        if not principal.operator:
+            mark_online(sid)
         store.prune_frames()
         return result
 
@@ -292,12 +347,58 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
         with store.lock:
             session_for(sid,principal,active=False)
             item=store.get_frame(sid,frame_id)
-            return FileResponse(store.frames_dir/(item["digest"]+".png"), media_type="image/png")
+            if item["kind"] != "png":
+                raise HTTPException(415, "This observation is JSON state, not an image")
+            return FileResponse(store.observation_path(item), media_type="image/png")
+
+    @app.post("/v1/sessions/{sid}/observations", response_model=FrameAccepted)
+    def upload_observation(sid: str, body: JsonObservation, background: BackgroundTasks,
+                           principal=Depends(auth), key=Depends(idem)):
+        data = canonical(body.state).encode()
+        digest = hashlib.sha256(data).hexdigest()
+        def apply():
+            session = session_for(sid, principal)
+            if profile_for(session).observation_kind != "json-state":
+                raise HTTPException(415, "Target does not expose JSON-state observations")
+            if body.frame_id <= session["latest_frame"]:
+                raise HTTPException(409, "Observation ID must increase monotonically", headers={"X-Clik-Error-Code":"frame_conflict"})
+            store.save_frame_file(digest, data, kind="json")
+            store.db.execute("INSERT INTO frames(session_id,frame_id,digest,width,height,size,created,kind) VALUES(?,?,?,0,0,?,?,'json')",
+                             (sid,body.frame_id,digest,len(data),time.time()))
+            store.db.execute("UPDATE sessions SET latest_frame=?,capture_requested=0 WHERE id=?",(body.frame_id,sid))
+            for action in store.db.execute("SELECT id,intent_id FROM actions WHERE session_id=? AND state IN ('queued','awaiting_confirmation') AND frame_id<>?",(sid,body.frame_id)).fetchall():
+                store.db.execute("UPDATE actions SET state='stale' WHERE id=?",(action["id"],))
+                store.db.execute("UPDATE intents SET status='awaiting_frame' WHERE id=?",(action["intent_id"],))
+                store.event("action_stale",sid,{"action_id":action["id"]})
+            urn = "urn:clikvm:state:sha256:"+digest
+            store.event("state_received",sid,{"frame_id":body.frame_id,"bytes":len(data),"resource_urn":urn})
+            return {"frame_id":body.frame_id,"width":0,"height":0,"resource_urn":urn,
+                    "planning_intent":schedule_observation(sid,body.frame_id)}
+        result,cached = store.mutation(principal.actor,key,"observation:"+sid,
+                                       {"frame_id":body.frame_id,"digest":digest},apply)
+        if not principal.operator:
+            mark_online(sid)
+        if result["planning_intent"] and not cached:
+            background.add_task(make_plan,sid,result["planning_intent"])
+        store.prune_frames()
+        return result
+
+    @app.get("/v1/sessions/{sid}/observations/{frame_id}")
+    def observation(sid: str, frame_id: int, principal=Depends(auth)):
+        with store.lock:
+            session_for(sid,principal,active=False)
+            item=store.get_frame(sid,frame_id)
+            if item["kind"] != "json":
+                raise HTTPException(415,"This observation is a screenshot, not JSON state")
+            return {"frame_id":frame_id,"state":json.loads(store.observation_path(item).read_bytes()),
+                    "resource_urn":"urn:clikvm:state:sha256:"+item["digest"]}
 
     @app.post("/v1/sessions/{sid}/intent",response_model=IntentCreated)
     def submit_intent(sid: str,body: IntentRequest,background: BackgroundTasks,principal=Depends(auth),key=Depends(idem)):
         def apply():
             session=session_for(sid,principal)
+            if profile_for(session).observation_kind == "none":
+                raise HTTPException(409, "Autonomous goals require a usable observation channel",headers={"X-Clik-Error-Code":"observation_required"})
             store.expire_actions(sid)
             if store.active_action(sid):
                 raise HTTPException(409,"Finish or reconcile the existing action first")
@@ -308,19 +409,23 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             if body.frame_id != session["latest_frame"]:
                 raise HTTPException(409,"Intent must use the latest frame",headers={"X-Clik-Error-Code":"frame_conflict"})
             observation=store.get_frame(sid,body.frame_id)
-            refresh=time.time()-observation["created"] > settings.max_observation_age_seconds
+            refresh=isinstance(principal,ControllerPrincipal) or time.time()-observation["created"] > settings.max_observation_age_seconds
             iid=identifier()
             store.db.execute("INSERT INTO intents(id,session_id,goal,status,frame_id,created) VALUES(?,?,?,?,?,?)",(iid,sid,body.text,"awaiting_frame" if refresh else "planning",body.frame_id,time.time()))
             store.db.execute("UPDATE sessions SET active_intent=?,capture_requested=? WHERE id=?",(iid,int(refresh),sid))
-            store.event("intent_started",sid,{"intent_id":iid,"frame_id":body.frame_id,"observation_refresh":refresh,"goal_sha256":hashlib.sha256(body.text.encode()).hexdigest()})
+            store.event("intent_started",sid,{"intent_id":iid,"frame_id":body.frame_id,"observation_refresh":refresh,"goal_sha256":hashlib.sha256(body.text.encode()).hexdigest(),"actor":principal.actor})
             return {"intent_id":iid,"status":"planning"}
-        result,cached=store.mutation(principal.actor,key,"intent:"+sid,body.model_dump(),apply)
+        result,cached=store.mutation(principal.actor,key,"intent:"+sid,{"text":body.text,"expected_session_id":principal.expected_session_id} if isinstance(principal,ControllerPrincipal) else body.model_dump(),apply)
         if not cached:
             background.add_task(make_plan,sid,result["intent_id"])
         return result
 
     @app.post("/v1/sessions/{sid}/actions/next",response_model=NextActionResponse)
     def next_action(sid: str,principal=Depends(auth),key=Depends(idem)):
+        with store.lock:
+            session_for(sid, principal)
+        if not principal.operator:
+            mark_online(sid)
         def apply():
             session=session_for(sid,principal)
             store.expire_actions(sid)
@@ -345,7 +450,7 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             command=json.loads(action["command"])
             result.update(state="ready",action={"action_id":action["id"],"lease_id":lease,"based_on_frame":action["frame_id"],
                                                  "valid_for_ms":max(0,int((lease_end-time.time())*1000)),"command":command,
-                                                 "operation_uri":"proc://clikvm/android/"+command["type"]+"/v1","after_action":"screenshot"})
+                                                 "operation_uri":operation_uri(profile_for(session),command["type"]),"after_action":"screenshot" if profile_for(session).observation_kind == "screenshot" else "observation"})
             return result
         response,cached=store.mutation(principal.actor,key,"next:"+sid,{},apply)
         if cached and response.get("action"):
@@ -363,11 +468,14 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
     @app.post("/v1/sessions/{sid}/capture")
     def request_capture(sid: str,principal=Depends(operator),key=Depends(idem)):
         def apply():
-            session_for(sid,principal)
+            session=session_for(sid,principal)
+            if profile_for(session).observation_kind == "none":
+                raise HTTPException(409,"KM-only target has no observation channel",headers={"X-Clik-Error-Code":"observation_required"})
             store.db.execute("UPDATE sessions SET capture_requested=1 WHERE id=?",(sid,))
             store.event("capture_requested",sid,{})
             return {"capture_requested":True}
-        return store.mutation(principal.actor,key,"capture:"+sid,{},apply)[0]
+        guard={"expected_session_id":principal.expected_session_id} if isinstance(principal,ControllerPrincipal) else {}
+        return store.mutation(principal.actor,key,"capture:"+sid,guard,apply)[0]
 
     @app.post("/v1/sessions/{sid}/actions/{aid}/result",response_model=ResultAccepted)
     def action_result(sid: str,aid: str,body: ActionResult,principal=Depends(auth),key=Depends(idem)):
@@ -410,7 +518,7 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             if not action or action["state"]!="uncertain":
                 raise HTTPException(409,"Only uncertain actions can be reconciled")
             if body.frame_id!=session["latest_frame"] or body.frame_id<=action["frame_id"]:
-                raise HTTPException(409,"Reconciliation requires a new screenshot")
+                raise HTTPException(409,"Reconciliation requires a new observation")
             store.db.execute("UPDATE actions SET state='resolved',result=? WHERE id=?",(canonical(body.model_dump()),aid))
             store.db.execute("UPDATE intents SET status='blocked',detail='reconciled_start_new_intent' WHERE id=?",(action["intent_id"],))
             store.event("action_resolved",sid,{"action_id":aid,"frame_id":body.frame_id,"resolution":body.resolution})
@@ -425,7 +533,8 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             store.db.execute("UPDATE intents SET status='cancelled' WHERE id=?",(session["active_intent"],))
             store.event("intent_cancelled",sid,{"intent_id":session["active_intent"]})
             return {"status":"cancelled"}
-        return store.mutation(principal.actor,key,"cancel:"+sid,{},apply)[0]
+        guard={"expected_session_id":principal.expected_session_id} if isinstance(principal,ControllerPrincipal) else {}
+        return store.mutation(principal.actor,key,"cancel:"+sid,guard,apply)[0]
 
     @app.post("/v1/sessions/{sid}/audio/stt",openapi_extra={"requestBody":{"required":True,"content":{"audio/wav":{"schema":{"type":"string","format":"binary"}}}}})
     async def stt(sid: str,request: Request,principal=Depends(auth),key=Depends(idem)):
@@ -490,7 +599,7 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             for path in store.frames_dir.glob("*.wav"):
                 if path.stem not in recent:
                     path.unlink(missing_ok=True)
-            used=sum(p.stat().st_size for p in store.frames_dir.iterdir() if p.suffix in {".png",".wav"})
+            used=sum(p.stat().st_size for p in store.frames_dir.iterdir() if p.suffix in {".png",".wav",".json"})
             path=store.frames_dir/(digest+".wav")
             if used+(0 if path.exists() else len(wav))>settings.max_storage_bytes:
                 raise HTTPException(507,"Media storage quota exhausted")
@@ -503,6 +612,84 @@ def create_app(settings: Settings | None = None, upstream_client: httpx.AsyncCli
             store.event("speech_synthesized",sid,{"text_characters":len(body.text),"audio_bytes":len(wav)})
         store.export_events()
         return Response(wav,media_type="audio/wav",headers={"X-Audio-Format":"pcm_s16le","X-Sample-Rate":"16000","X-Channels":"1"})
+
+    def controller_auth(controller_id: str, credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+        expected = settings.controller_tokens.get(controller_id)
+        if not expected or not credentials or credentials.scheme.lower() != "bearer" or not secrets.compare_digest(
+                hashlib.sha256(credentials.credentials.encode()).digest(),hashlib.sha256(expected.encode()).digest()):
+            raise HTTPException(401,"Matching controller credential required",headers={"WWW-Authenticate":"Bearer"})
+        return ControllerPrincipal(controller_id,settings.controller_targets[controller_id])
+
+    def controller_session(principal: ControllerPrincipal, *, online=True, observed=False, expected_session_id=None):
+        with store.lock:
+            row=store.db.execute("SELECT * FROM sessions WHERE device_id=? AND status='active' AND expires>? ORDER BY created DESC LIMIT 1",
+                                 (principal.device_id,time.time())).fetchone()
+            if row is not None and expected_session_id is not None and row["id"] != expected_session_id:
+                raise HTTPException(409,"Target session changed during the request",headers={"X-Clik-Error-Code":"target_changed"})
+            if row is None or (online and not is_online(row["id"])):
+                raise HTTPException(409,"Assigned target is unavailable",headers={"X-Clik-Error-Code":"target_unavailable"})
+            if observed and profile_for(row).observation_kind == "none":
+                raise HTTPException(409,"KM-only target has no observation channel",headers={"X-Clik-Error-Code":"observation_required"})
+            return row
+
+    @app.get("/v1/controllers/{controller_id}/target")
+    def controller_target(controller_id: str, principal=Depends(controller_auth)):
+        result={"controller_id":controller_id,"target_device_id":principal.device_id,"session_id":None,
+                "ready":False,"state":"offline","message":"Przypisane urządzenie nie jest dostępne",
+                "latest_frame":0,"platform":"unknown","transport":"unavailable","observation_kind":"none",
+                "capabilities":[],"action_types":[]}
+        try:
+            row=controller_session(principal,online=False)
+        except HTTPException:
+            return result
+        snapshot=status(row["id"],principal)
+        profile=profile_for(row)
+        result.update(session_id=row["id"],latest_frame=row["latest_frame"],platform=profile.platform,
+                      transport=profile.transport,observation_kind=profile.observation_kind,
+                      capabilities=json.loads(row["capabilities"]),action_types=profile.action_types)
+        if not is_online(row["id"]):
+            return result
+        result.update(state=snapshot["state"],message=snapshot["message"])
+        if profile.observation_kind == "none":
+            result.update(state="observation_required",message="Dostępne KM; podłącz kanał obrazu lub stanu")
+        elif not row["latest_frame"]:
+            result.update(state="awaiting_frame",message="Czekam na pierwszą obserwację urządzenia")
+        else:
+            result["ready"]=True
+        return result
+
+    @app.post("/v1/controllers/{controller_id}/intent",response_model=IntentCreated)
+    def controller_intent(controller_id: str, body: ControllerIntent, background: BackgroundTasks,
+                          principal=Depends(controller_auth),key=Depends(idem)):
+        row=controller_session(principal,observed=True,expected_session_id=body.expected_session_id)
+        principal=ControllerPrincipal(principal.controller_id,principal.device_id,expected_session_id=body.expected_session_id)
+        if not row["latest_frame"]:
+            raise HTTPException(409,"Wait for the first target observation",headers={"X-Clik-Error-Code":"observation_required"})
+        return submit_intent(row["id"],IntentRequest(text=body.text,frame_id=row["latest_frame"]),background,principal,key)
+
+    @app.post("/v1/controllers/{controller_id}/capture")
+    def controller_capture(controller_id: str,body: ControllerGuard,principal=Depends(controller_auth),key=Depends(idem)):
+        row=controller_session(principal,observed=True,expected_session_id=body.expected_session_id)
+        principal=ControllerPrincipal(principal.controller_id,principal.device_id,expected_session_id=body.expected_session_id)
+        return request_capture(row["id"],principal,key)
+
+    @app.post("/v1/controllers/{controller_id}/cancel")
+    def controller_cancel(controller_id: str,body: ControllerGuard,principal=Depends(controller_auth),key=Depends(idem)):
+        row=controller_session(principal,online=False,expected_session_id=body.expected_session_id)
+        principal=ControllerPrincipal(principal.controller_id,principal.device_id,expected_session_id=body.expected_session_id)
+        return cancel(row["id"],principal,key)
+
+    @app.post("/v1/controllers/{controller_id}/audio/stt",openapi_extra={"requestBody":{"required":True,"content":{"audio/wav":{"schema":{"type":"string","format":"binary"}}}}})
+    async def controller_stt(controller_id: str,request: Request,principal=Depends(controller_auth),key=Depends(idem)):
+        row=controller_session(principal,observed=True)
+        async with audio_serial:
+            return await perform_stt(row["id"],request,principal,key)
+
+    @app.post("/v1/controllers/{controller_id}/audio/tts",responses={200:{"content":{"audio/wav":{"schema":{"type":"string","format":"binary"}}}}})
+    async def controller_tts(controller_id: str,body: SpeakRequest,principal=Depends(controller_auth),key=Depends(idem)):
+        row=controller_session(principal,observed=True)
+        async with audio_serial:
+            return await perform_tts(row["id"],body,principal,key)
 
     @app.post("/v1/oqllm/route")
     async def route(body: RouteRequest,principal=Depends(operator)):

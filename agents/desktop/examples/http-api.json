@@ -1,0 +1,35 @@
+{
+  "gateway_url": "https://gateway.example.com",
+  "device_id": "office-light",
+  "token_env": "CLIK_NODE_TOKEN",
+  "state_dir": ".state/office-light",
+  "backend": "http-api",
+  "options": {
+    "base_url": "https://homeassistant.example.com",
+    "state_path": "/api/states/light.office",
+    "headers_env": {"Authorization": "CLIK_DEVICE_API_AUTHORIZATION"},
+    "operations": {
+      "light.turn_on": {
+        "method": "POST",
+        "path": "/api/services/light/turn_on",
+        "description": "Turn on the configured office light with a brightness from 1 to 255.",
+        "requires_confirmation": false,
+        "parameters_schema": {
+          "type": "object",
+          "properties": {"brightness": {"type": "integer", "minimum": 1, "maximum": 255}},
+          "required": ["brightness"],
+          "additionalProperties": false
+        },
+        "body": {"entity_id": "light.office", "brightness": {"$arg": "brightness"}}
+      },
+      "light.turn_off": {
+        "method": "POST",
+        "path": "/api/services/light/turn_off",
+        "description": "Turn off only the configured office light.",
+        "requires_confirmation": false,
+        "parameters_schema": {"type": "object", "properties": {}, "additionalProperties": false},
+        "body": {"entity_id": "light.office"}
+      }
+    }
+  }
+}
