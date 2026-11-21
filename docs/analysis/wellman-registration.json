@@ -1,0 +1,79 @@
+{
+  "changed": true,
+  "dry_run": false,
+  "path": "/workspace/scratch/1b24ef4efda6/projects/m5stack/.governance/standard-requirements.json",
+  "registrationLockChanged": false,
+  "registration": {
+    "schema": "wellman.standard-requirements/v1",
+    "profiles": [
+      "baseline",
+      "runtime-service"
+    ],
+    "requirements": [
+      {
+        "id": "wellmanifest/authority-lifecycle",
+        "minimumLevel": "S5"
+      },
+      {
+        "id": "wellmanifest/docs",
+        "minimumLevel": "S3"
+      },
+      {
+        "id": "wellmanifest/git-lifecycle",
+        "minimumLevel": "S4"
+      },
+      {
+        "id": "wellmanifest/lifecycle",
+        "minimumLevel": "S4"
+      },
+      {
+        "id": "wellmanifest/llm",
+        "minimumLevel": "S3"
+      },
+      {
+        "id": "wellmanifest/logs",
+        "minimumLevel": "S5"
+      },
+      {
+        "id": "wellmanifest/merge",
+        "minimumLevel": "S4"
+      },
+      {
+        "id": "wellmanifest/new-project",
+        "minimumLevel": "S4"
+      },
+      {
+        "id": "wellmanifest/poa",
+        "minimumLevel": "S5"
+      },
+      {
+        "id": "wellmanifest/semver",
+        "minimumLevel": "S1"
+      },
+      {
+        "id": "wellmanifest/ticket-lifecycle",
+        "minimumLevel": "S3"
+      },
+      {
+        "id": "wellmanifest/validation-attestation",
+        "minimumLevel": "S4"
+      },
+      {
+        "id": "wellmanifest/worktrees",
+        "minimumLevel": "S3"
+      }
+    ]
+  },
+  "conformance": "unverified",
+  "localCiPublication": {
+    "changed": false,
+    "path": "/workspace/scratch/1b24ef4efda6/projects/m5stack/.governance/local-ci-publication.json",
+    "policy": {
+      "schema": "new-project.local-ci-publication/v1",
+      "scope": {
+        "mode": "all"
+      }
+    },
+    "problem": null
+  }
+}

@@ -1,0 +1,28 @@
+clikVM / M5Stack, version 0.1.0
+Project source is provided under the Apache License, Version 2.0.
+
+The display initialization table in
+firmware/components/clik_board/ili9342e_init_cmds.h is derived from the
+Espressif esp-bsp M5Stack CoreS3 component and retains its upstream notice:
+Copyright 2026 Espressif Systems (Shanghai) CO LTD, Apache-2.0.
+https://github.com/espressif/esp-bsp/tree/master/bsp/m5stack_core_s3
+
+Board signal and codec configuration follows official M5Stack schematics,
+M5Unified power documentation and Waveshare LCD-1.54 examples. The application
+board layer, status font and orchestration are implemented for this repository.
+https://docs.m5stack.com/en/core/CoreS3
+https://docs.m5stack.com/en/arduino/m5unified/power_class
+https://github.com/waveshareteam/ESP32-S3-Touch-LCD-1.54
+
+ESP-IDF and managed components are dependencies downloaded from their publishers;
+their individual notices and licenses remain applicable. Exact resolved component
+versions and content hashes are recorded in firmware/dependencies.lock.
+
+Wellmanifest contract snapshots retain publisher ownership and are attributed
+with immutable source URLs and hashes in .governance/standards.lock.json.
+These snapshots are used for validation, not represented as original clikVM work.
+Public standard source licensing and upstream terms remain applicable.
+
+M5Stack, Espressif, Waveshare, Android, OQLLM and Wellmanifest are names of their
+respective projects or owners. This repository makes no certification or
+endorsement claim from those projects.

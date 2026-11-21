@@ -1,0 +1,10 @@
+{
+  "schema": "clikvm.standards-evidence/v1",
+  "upstream_revision": "45b9672c3ae413f3b05af5c90986c478a899e3b3",
+  "checks": {
+    "official_logs_validate_event": "passed",
+    "official_logs_event_json_schema": "passed"
+  },
+  "scope": "one representative adopter event; no hardware or release attestation",
+  "event_hash": "4fd355e639b58b3cfe8b0a4014309cbc95d896b34402754e8a61dc19aaeb51f6"
+}

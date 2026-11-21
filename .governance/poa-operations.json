@@ -1,0 +1,332 @@
+[
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "android.tap",
+    "uri": "proc://clikvm/android/tap/v1",
+    "version": 1,
+    "summary": "Tap one pixel coordinate on the current Android frame.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "tap",
+          "title": "Type",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "Tap",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.android",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:21:49.550883Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "android.swipe",
+    "uri": "proc://clikvm/android/swipe/v1",
+    "version": 1,
+    "summary": "Swipe between bounded coordinates with a bounded duration.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "swipe",
+          "title": "Type",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        },
+        "x2": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y2": {
+          "maximum": 16383,
+          "minimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        },
+        "duration_ms": {
+          "default": 300,
+          "maximum": 3000,
+          "minimum": 50,
+          "title": "Duration Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "x",
+        "y",
+        "x2",
+        "y2"
+      ],
+      "title": "Swipe",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.android",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:21:49.550883Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "android.key",
+    "uri": "proc://clikvm/android/key/v1",
+    "version": 1,
+    "summary": "Send one explicitly allowed Android key.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "key",
+          "title": "Type",
+          "type": "string"
+        },
+        "key": {
+          "enum": [
+            "HOME",
+            "BACK",
+            "ENTER",
+            "TAB",
+            "ESCAPE",
+            "DPAD_UP",
+            "DPAD_DOWN",
+            "DPAD_LEFT",
+            "DPAD_RIGHT",
+            "DEL",
+            "APP_SWITCH"
+          ],
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "key"
+      ],
+      "title": "Key",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.android",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:21:49.550883Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "android.text",
+    "uri": "proc://clikvm/android/text/v1",
+    "version": 1,
+    "summary": "Enter printable ASCII through the supported Android input profile.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "text",
+          "title": "Type",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "text"
+      ],
+      "title": "Text",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.android",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:21:49.550883Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "android.open_url",
+    "uri": "proc://clikvm/android/open_url/v1",
+    "version": 1,
+    "summary": "Open a validated HTTP(S) URL in Android.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "open_url",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 1024,
+          "minLength": 8,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "url"
+      ],
+      "title": "OpenUrl",
+      "type": "object"
+    },
+    "effects": [
+      "external_write",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.android",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:21:49.550883Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "android.screenshot",
+    "uri": "proc://clikvm/android/screenshot/v1",
+    "version": 1,
+    "summary": "Capture a new Android screen through authenticated ADB.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "screenshot",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Screenshot",
+      "type": "object"
+    },
+    "effects": [
+      "read_data",
+      "remote_session"
+    ],
+    "risk": "medium",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.android",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:21:49.550883Z"
+    }
+  },
+  {
+    "schema": "poa.operation/v1",
+    "operation_id": "android.wait",
+    "uri": "proc://clikvm/android/wait/v1",
+    "version": 1,
+    "summary": "Wait for a bounded duration before another observation.",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "wait",
+          "title": "Type",
+          "type": "string"
+        },
+        "duration_ms": {
+          "default": 500,
+          "maximum": 5000,
+          "minimum": 50,
+          "title": "Duration Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Wait",
+      "type": "object"
+    },
+    "effects": [],
+    "risk": "low",
+    "lifecycle": "candidate",
+    "provenance": {
+      "registry": "clikvm.android",
+      "source_id": "gateway/clikvm/models.py",
+      "source_sha256": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+      "origin": "declared",
+      "recorded_at": "2026-11-21T16:21:49.550883Z"
+    }
+  }
+]

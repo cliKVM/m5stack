@@ -1,0 +1,3 @@
+# Tooling only. Runtime gateway/firmware never imports Wellman.
+wellman @ git+https://github.com/wellmanifest/wellman.git@e8946f97c5a28e4162c4a5a91e19e2bab2713925
+jsonschema==4.26.0

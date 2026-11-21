@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+.state
+.venv*
+build
+dist
+firmware
+research
+node_modules
+**/__pycache__
+**/*.egg-info
+**/*.pyc

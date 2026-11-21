@@ -1,0 +1,20 @@
+{
+  "schema": "clikvm.llm-boundary/v1",
+  "version": "0.1.0",
+  "transport": "https",
+  "model_endpoint_environment": "CLIK_MODEL_ENDPOINT",
+  "poa_endpoint_environment": "CLIK_POA_ENDPOINT",
+  "stt_endpoint_environment": "CLIK_STT_ENDPOINT",
+  "tts_endpoint_environment": "CLIK_TTS_ENDPOINT",
+  "configuration_source": "gateway/clikvm/config.py",
+  "model_contract_source": "gateway/clikvm/models.py",
+  "proposal_type": "Plan",
+  "execution_type": "Action",
+  "model_authority": "proposal_only",
+  "execution_binding": ["device_id", "session_id", "frame_id", "lease_id"],
+  "raw_shell_from_model": false,
+  "credentials_in_prompt": false,
+  "credentials_in_operation_uris": false,
+  "source_standard": "https://github.com/wellmanifest/llm/tree/25b3c1399112529862830e4d4ce4dedecf426c30",
+  "adoption_status": "boundary principles mapped; canonical Subactor-first MCP profile not implemented"
+}

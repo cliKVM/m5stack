@@ -1,0 +1,42 @@
+menu "clikVM"
+choice CLIK_BOARD
+    prompt "Target board"
+    default CLIK_BOARD_CORES3
+config CLIK_BOARD_CORES3
+    bool "M5Stack CoreS3 K128"
+config CLIK_BOARD_LCD154
+    bool "Waveshare ESP32-S3-LCD-1.54 (33867 / Touch 33869)"
+endchoice
+config CLIK_LCD154_TOUCH
+    bool "Waveshare Touch variant (CST816)"
+    depends on CLIK_BOARD_LCD154
+    default n
+choice CLIK_CORES3_POWER_SOURCE
+    prompt "CoreS3 host power source (see docs/hardware.md)"
+    depends on CLIK_BOARD_CORES3
+    default CLIK_CORES3_EXTERNAL_BUS_POWER
+config CLIK_CORES3_EXTERNAL_BUS_POWER
+    bool "External 5V BUS from DINBase DC supply"
+config CLIK_CORES3_BATTERY_POWER
+    bool "Internal battery boost, NO external BUS supply"
+endchoice
+config CLIK_ALLOW_HTTP_LAN
+    bool "Development: allow unencrypted HTTP to a private LAN IPv4 address"
+    default n
+    help
+        Production uses HTTPS with CA verification. This option permits only
+        explicit RFC1918 IPv4 hosts for a local test gateway. DNS hostnames
+        and public addresses still require HTTPS.
+config CLIK_AUDIO_SECONDS
+    int "Push-to-talk maximum recording seconds"
+    range 1 15
+    default 8
+config CLIK_CAPTURE_MAX_MIB
+    int "Maximum streamed screenshot bytes (MiB)"
+    range 1 16
+    default 4
+config CLIK_TTS_ENABLED
+    bool "Speak short results through explicitly configured gateway TTS"
+    default n
+endmenu
+

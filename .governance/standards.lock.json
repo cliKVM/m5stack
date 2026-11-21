@@ -1,0 +1,98 @@
+{
+  "schema": "clikvm.standards-lock/v1",
+  "observed_at": "2026-11-21",
+  "repository": "clikVM/m5stack",
+  "scope": "Pinned source provenance and extracted contracts; not a Wellman adoption certificate.",
+  "wellman_version": "0.23.2",
+  "sources": [
+    {
+      "id": "wellmanifest/logs",
+      "revision": "45b9672c3ae413f3b05af5c90986c478a899e3b3",
+      "source": "https://github.com/wellmanifest/logs",
+      "source_file": "contracts/logs.contract.v0.5.json",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/logs/45b9672c3ae413f3b05af5c90986c478a899e3b3/contracts/logs.contract.v0.5.json",
+      "source_sha256": "72e16ac823359879e01722e1e3e7017f50524c8cdf54e8eaec9d8802bc804e36",
+      "json_pointer": "/schemas/event",
+      "local_file": ".governance/upstream/logs-event.schema.json",
+      "local_sha256": "4a99805e282af78ecb81412da641a4297242b6eb5f41b94b5a320ae0763b4c9d"
+    },
+    {
+      "id": "wellmanifest/poa",
+      "revision": "cba52778fcc2d942fe879bc71b13695368c38647",
+      "source": "https://github.com/wellmanifest/poa",
+      "source_file": "standard/poa-operation.schema.v1.json",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/poa/cba52778fcc2d942fe879bc71b13695368c38647/standard/poa-operation.schema.v1.json",
+      "source_sha256": "72b5779831114a5dbd5bf05075d2a0d6411d2a53df6cd938e9e258eb2d8b1037",
+      "json_pointer": null,
+      "local_file": ".governance/upstream/poa-operation.schema.json",
+      "local_sha256": "72b5779831114a5dbd5bf05075d2a0d6411d2a53df6cd938e9e258eb2d8b1037"
+    },
+    {
+      "id": "wellmanifest/semver",
+      "revision": "432b6f94ef79c2cfbd84ba1ad697b46bbc5e4011",
+      "source": "https://github.com/wellmanifest/semver",
+      "source_file": "schemas/embedded-release.schema.json",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/semver/432b6f94ef79c2cfbd84ba1ad697b46bbc5e4011/schemas/embedded-release.schema.json",
+      "source_sha256": "82d9aaf08de387c62a28d04c73ffed673cb53434882fdfbdba3339c404cf7e09",
+      "json_pointer": null,
+      "local_file": ".governance/upstream/embedded-release.schema.json",
+      "local_sha256": "6ce94351620adccc661b64041b603b4f5251d110a92f4634509ead4d726ef36d"
+    },
+    {
+      "id": "wellmanifest/wellman",
+      "revision": "e8946f97c5a28e4162c4a5a91e19e2bab2713925",
+      "source": "https://github.com/wellmanifest/wellman",
+      "source_file": "pyproject.toml",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/wellman/e8946f97c5a28e4162c4a5a91e19e2bab2713925/pyproject.toml",
+      "source_sha256": "6ee1b46cc222b3015ba57a9be73d01bfb4ce4fb3db6bda9eac287b41507b61a7",
+      "local_file": null
+    },
+    {
+      "id": "wellmanifest/data-plane",
+      "revision": "fd62322a23c3ee2ae29c6ed878563b18d1316ccb",
+      "source": "https://github.com/wellmanifest/data-plane",
+      "source_file": "README.md",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/data-plane/fd62322a23c3ee2ae29c6ed878563b18d1316ccb/README.md",
+      "source_sha256": "4e1f31656987ea640650952cc4258a7f586173302deba97109241cb4ef2ffb81",
+      "local_file": null
+    },
+    {
+      "id": "wellmanifest/planfile",
+      "revision": "279b82a5f528f8c8d6e9b1cef6f7dca9d056ff58",
+      "source": "https://github.com/wellmanifest/planfile",
+      "source_file": "docs/standard/PLANFILE-INDEX.md",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/planfile/279b82a5f528f8c8d6e9b1cef6f7dca9d056ff58/docs/standard/PLANFILE-INDEX.md",
+      "source_sha256": "cd641782fdf7411c3a1e894eb1d728f7b488253c5d9fb938bcc7ebec052a3f82",
+      "local_file": null
+    },
+    {
+      "id": "wellmanifest/oql",
+      "revision": "c19ae43fce3fc10f6aa45c5d6d393d2153621ebb",
+      "source": "https://github.com/wellmanifest/oql",
+      "source_file": "README.md",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/oql/c19ae43fce3fc10f6aa45c5d6d393d2153621ebb/README.md",
+      "source_sha256": "c5c30371b160c3cc3cef80801d973eafadda036c3e9c527b5de166f9eb59aad3",
+      "local_file": null
+    },
+    {
+      "id": "wellmanifest/poa",
+      "revision": "cba52778fcc2d942fe879bc71b13695368c38647",
+      "source": "https://github.com/wellmanifest/poa",
+      "source_file": "standard/poa-process.schema.v1.json",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/poa/cba52778fcc2d942fe879bc71b13695368c38647/standard/poa-process.schema.v1.json",
+      "source_sha256": "9222fbe9aded60df6d3c0b39b7a4a89b8ad627f122349e909fdfba44047669ab",
+      "local_file": ".governance/upstream/poa-process.schema.json",
+      "local_sha256": "9222fbe9aded60df6d3c0b39b7a4a89b8ad627f122349e909fdfba44047669ab"
+    },
+    {
+      "id": "wellmanifest/llm",
+      "revision": "25b3c1399112529862830e4d4ce4dedecf426c30",
+      "source": "https://github.com/wellmanifest/llm",
+      "source_file": "models/llm-profile.schema.json",
+      "source_url": "https://raw.githubusercontent.com/wellmanifest/llm/25b3c1399112529862830e4d4ce4dedecf426c30/models/llm-profile.schema.json",
+      "source_sha256": "6984fa2cc85ef32297bb9a74235c17bc8ec657151549a94deadb0bbdd415b458",
+      "local_file": ".governance/upstream/llm-profile.schema.json",
+      "local_sha256": "6984fa2cc85ef32297bb9a74235c17bc8ec657151549a94deadb0bbdd415b458"
+    }
+  ]
+}

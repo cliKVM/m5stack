@@ -1,0 +1,66 @@
+{
+  "root": "/workspace/scratch/1b24ef4efda6/projects/m5stack",
+  "valid": false,
+  "error_count": 7,
+  "warning_count": 1,
+  "findings": [
+    {
+      "code": "GOV-MANIFEST-MISSING",
+      "message": "Missing .governance/manifest.json",
+      "severity": "ERROR",
+      "path": "",
+      "remediation": "Run `wellman adopt wellmanifest/new-project` to bootstrap governance."
+    },
+    {
+      "code": "GOV-LOGS-MISSING",
+      "message": "wellmanifest/logs is required but the error catalog errors/README.md is missing.",
+      "severity": "ERROR",
+      "path": "errors/README.md",
+      "remediation": "Add the consumer error catalog errors/README.md with one errors/{CODE}.md runbook per emitted code and validate it with `logs_check.py error-adoption`."
+    },
+    {
+      "code": "GOV-AGENT-001",
+      "message": "Missing AGENTS.md instruction file in repository root.",
+      "severity": "WARNING",
+      "path": "AGENTS.md",
+      "remediation": "Generate AGENTS.md from the Wellmanifest template."
+    },
+    {
+      "code": "GOV-AUTHORITY-LIFECYCLE-MISSING",
+      "message": "Repository requires wellmanifest/authority-lifecycle but no lease or authority-lifecycle profile was found.",
+      "severity": "ERROR",
+      "path": ".governance/authority-lifecycle.json",
+      "remediation": "Provide .governance/authority-lifecycle.json or canonical .subactor/leases/*.json change-lease records."
+    },
+    {
+      "code": "GOV-REPAIR-LIFECYCLE-MISSING",
+      "message": "Repository requires wellmanifest/repair-lifecycle but no remediation-intent or repair-lifecycle contract was found.",
+      "severity": "ERROR",
+      "path": ".governance/repair-lifecycle.json",
+      "remediation": "Provide .governance/repair-lifecycle.json or .governance/remediation-intent.json."
+    },
+    {
+      "code": "GOV-SKILLS-MISSING",
+      "message": "Repository requires wellmanifest/skills but no skill.json or SKILL.md artifact was found.",
+      "severity": "ERROR",
+      "path": "skills/SKILL.md",
+      "remediation": "Provide skills/<name>/SKILL.md with YAML frontmatter or standard/skill.json."
+    },
+    {
+      "code": "GOV-LLM-MISSING",
+      "message": "Repository requires wellmanifest/llm but no .wellmanifest/llm.json or .governance/llm.json profile was found.",
+      "severity": "ERROR",
+      "path": ".wellmanifest/llm.json",
+      "remediation": "Provide .wellmanifest/llm.json conforming to wellmanifest.llm-profile/v1."
+    },
+    {
+      "code": "GOV-POA-MISSING",
+      "message": "Repository requires wellmanifest/poa but no poa-process.json or .governance/poa.json was found.",
+      "severity": "ERROR",
+      "path": ".governance/poa.json",
+      "remediation": "Provide poa-process.json with acyclic deterministic action steps."
+    }
+  ],
+  "validation_scope": "implemented-checks",
+  "runtime_enforcement": "not_checked"
+}

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clikvm-m5stack"
+version = "0.1.0"
+description = "clikVM USB Android controller gateway, OQLLM adapters and simulator"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.141.1",
+  "pydantic==2.13.4",
+  "uvicorn==0.52.1",
+  "httpx==0.28.1",
+  "python-multipart==0.0.32",
+]
+
+[project.optional-dependencies]
+dev = ["jsonschema==4.26.0"]
+
+[project.scripts]
+clikvm = "clikvm.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "gateway"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["gateway"]
+
+[tool.setuptools.package-data]
+clikvm = ["static/*"]

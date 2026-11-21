@@ -1,0 +1,9 @@
+{
+  "name": "clikvm-frontend-contract-tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Optional DOM plus real HTTP contract verification; not rendered browser or hardware tests",
+  "devDependencies": {
+    "jsdom": "31.0.1"
+  }
+}

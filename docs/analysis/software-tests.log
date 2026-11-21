@@ -1,0 +1,67 @@
+PYTHONPATH=gateway .venv/bin/python -m unittest discover -s tests -p 'test_gateway*.py' -v
+/workspace/scratch/1b24ef4efda6/projects/m5stack/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+test_binary_audio_contract_and_exact_retry_cache (test_gateway.GatewayAudioAPITests.test_binary_audio_contract_and_exact_retry_cache) ... ok
+test_authorization_and_device_isolation (test_gateway.GatewayTests.test_authorization_and_device_isolation) ... ok
+test_complete_http_contract_and_audit_chain (test_gateway.GatewayTests.test_complete_http_contract_and_audit_chain) ... ok
+test_event_replay_rebuilds_all_command_projections (test_gateway.GatewayTests.test_event_replay_rebuilds_all_command_projections) ... ok
+test_events_are_append_only_and_second_worker_is_rejected (test_gateway.GatewayTests.test_events_are_append_only_and_second_worker_is_rejected) ... ok
+test_expired_lease_is_uncertain_and_never_replayed (test_gateway.GatewayTests.test_expired_lease_is_uncertain_and_never_replayed) ... ok
+test_frame_retention_is_bounded (test_gateway.GatewayTests.test_frame_retention_is_bounded) ... ok
+test_idempotency_conflict_and_frame_monotonicity (test_gateway.GatewayTests.test_idempotency_conflict_and_frame_monotonicity) ... ok
+test_invalid_oversized_or_mismatched_png_is_rejected (test_gateway.GatewayTests.test_invalid_oversized_or_mismatched_png_is_rejected) ... ok
+test_lease_retry_does_not_deliver_an_action_twice (test_gateway.GatewayTests.test_lease_retry_does_not_deliver_an_action_twice) ... ok
+test_new_boot_supersedes_session (test_gateway.GatewayTests.test_new_boot_supersedes_session) ... ok
+test_new_screenshot_invalidates_old_coordinates (test_gateway.GatewayTests.test_new_screenshot_invalidates_old_coordinates) ... ok
+test_no_action_without_user_intent (test_gateway.GatewayTests.test_no_action_without_user_intent) ... ok
+test_old_observation_requests_capture_before_planning (test_gateway.GatewayTests.test_old_observation_requests_capture_before_planning) ... ok
+test_operator_capture_requests_new_frame_without_an_intent (test_gateway.GatewayTests.test_operator_capture_requests_new_frame_without_an_intent) ... ok
+test_operator_confirmation_cannot_be_granted_by_device (test_gateway.GatewayTests.test_operator_confirmation_cannot_be_granted_by_device) ... ok
+test_partial_projection_line_is_recovered_without_duplicate (test_gateway.GatewayTests.test_partial_projection_line_is_recovered_without_duplicate) ... ok
+test_projection_failure_does_not_rollback_committed_event (test_gateway.GatewayTests.test_projection_failure_does_not_rollback_committed_event) ... Event projection deferred (IsADirectoryError); committed events remain in SQLite
+Event projection deferred (IsADirectoryError); committed events remain in SQLite
+ok
+test_read_queries_do_not_append_events (test_gateway.GatewayTests.test_read_queries_do_not_append_events) ... ok
+test_real_session_never_falls_back_to_simulation (test_gateway.GatewayTests.test_real_session_never_falls_back_to_simulation) ... ok
+test_restart_does_not_reissue_unacknowledged_action (test_gateway.GatewayTests.test_restart_does_not_reissue_unacknowledged_action) ... ok
+test_simulation_can_be_disabled (test_gateway.GatewayTests.test_simulation_can_be_disabled) ... ok
+test_uncertain_resolution_requires_new_frame (test_gateway.GatewayTests.test_uncertain_resolution_requires_new_frame) ... ok
+test_actual_openai_request_and_typed_response (test_gateway.UpstreamTests.test_actual_openai_request_and_typed_response) ... ok
+test_audio_upstreams_and_normalization (test_gateway.UpstreamTests.test_audio_upstreams_and_normalization) ... ok
+test_invalid_model_output_fails_closed (test_gateway.UpstreamTests.test_invalid_model_output_fails_closed) ... ok
+test_literal_android_text_rejects_unicode_percent_and_control (test_gateway.UpstreamTests.test_literal_android_text_rejects_unicode_percent_and_control) ... ok
+test_poa_only_routes_never_dispatches (test_gateway.UpstreamTests.test_poa_only_routes_never_dispatches) ... ok
+test_synthetic_device_over_real_tcp_http (test_gateway_http.RealHTTPTests.test_synthetic_device_over_real_tcp_http) ... ok
+test_switching_devices_cannot_reuse_previous_frame (test_gateway_ui.DashboardIsolationTests.test_switching_devices_cannot_reuse_previous_frame) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 3.636s
+
+OK
+PYTHONPATH=gateway .venv/bin/python -m unittest discover -s gateway/tests -p 'test_audit.py' -v
+test_canonical_domain_rejects_floats_and_invalid_unicode (test_audit.AuditContractTests.test_canonical_domain_rejects_floats_and_invalid_unicode) ... ok
+test_events_match_independent_upstream_schema (test_audit.AuditContractTests.test_events_match_independent_upstream_schema) ... ok
+test_invalid_inputs_fail_before_persistence (test_audit.AuditContractTests.test_invalid_inputs_fail_before_persistence) ... ok
+test_tampering_and_extra_fields_are_detected (test_audit.AuditContractTests.test_tampering_and_extra_fields_are_detected) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.129s
+
+OK
+ASAN_OPTIONS=detect_leaks=0 sh tests/native/run.sh
+PASS: 6 groups; 490 fragmented roundtrips; exact-MPS reads; coalesced packets; checksum/magic/size rejection; USB descriptors; shell quoting; 50000 malformed inputs through both parsers
+PASS: 6 actual POSIX-shell argument-preservation cases (no command injection)
+.venv/bin/python scripts/standards.py check
+{
+  "schema": "clikvm.standards-check/v1",
+  "ok": true,
+  "checks": [
+    "pinned-contract-digests",
+    "wellman-requirement-registration",
+    "poa.operation/v1-and-model-source-binding",
+    "poa.process/v1",
+    "wellmanifest.logs/event/v1-example"
+  ],
+  "events_checked": 0,
+  "scope": "offline extracted contracts and producer output; no fleet certification or hardware attestation"
+}

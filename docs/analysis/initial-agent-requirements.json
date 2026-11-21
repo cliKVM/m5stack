@@ -1,0 +1,77 @@
+{
+  "schema": "wellman.standard-requirements/v1",
+  "profiles": [
+    "agent-executor",
+    "baseline"
+  ],
+  "requirements": [
+    {
+      "id": "wellmanifest/agent",
+      "minimumLevel": "S4"
+    },
+    {
+      "id": "wellmanifest/authority-lifecycle",
+      "minimumLevel": "S5"
+    },
+    {
+      "id": "wellmanifest/docs",
+      "minimumLevel": "S3"
+    },
+    {
+      "id": "wellmanifest/git-lifecycle",
+      "minimumLevel": "S4"
+    },
+    {
+      "id": "wellmanifest/lifecycle",
+      "minimumLevel": "S4"
+    },
+    {
+      "id": "wellmanifest/llm",
+      "minimumLevel": "S4"
+    },
+    {
+      "id": "wellmanifest/logs",
+      "minimumLevel": "S5"
+    },
+    {
+      "id": "wellmanifest/merge",
+      "minimumLevel": "S4"
+    },
+    {
+      "id": "wellmanifest/new-project",
+      "minimumLevel": "S4"
+    },
+    {
+      "id": "wellmanifest/poa",
+      "minimumLevel": "S5"
+    },
+    {
+      "id": "wellmanifest/repair-lifecycle",
+      "minimumLevel": "S5"
+    },
+    {
+      "id": "wellmanifest/semver",
+      "minimumLevel": "S1"
+    },
+    {
+      "id": "wellmanifest/session-recovery",
+      "minimumLevel": "S3"
+    },
+    {
+      "id": "wellmanifest/skills",
+      "minimumLevel": "S4"
+    },
+    {
+      "id": "wellmanifest/ticket-lifecycle",
+      "minimumLevel": "S3"
+    },
+    {
+      "id": "wellmanifest/validation-attestation",
+      "minimumLevel": "S5"
+    },
+    {
+      "id": "wellmanifest/worktrees",
+      "minimumLevel": "S3"
+    }
+  ]
+}

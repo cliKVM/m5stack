@@ -1,0 +1,41 @@
+services:
+  gateway:
+    build: .
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      CLIK_STATE_DIR: /state
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - gateway-state:/state
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=32m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+  https:
+    image: caddy:2
+    profiles: ["https"]
+    restart: unless-stopped
+    environment:
+      CLIK_PUBLIC_HOST: ${CLIK_PUBLIC_HOST:-clikvm.example.com}
+      CLIK_ACME_EMAIL: ${CLIK_ACME_EMAIL:-operator@example.com}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      gateway:
+        condition: service_healthy
+volumes:
+  gateway-state:
+  caddy-data:
+  caddy-config:

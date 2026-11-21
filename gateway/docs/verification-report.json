@@ -1,0 +1,38 @@
+{
+  "schema": "clikvm.verification/v1",
+  "started_at": "2026-11-21T16:23:06.241508+00:00",
+  "command": "PYTHONPATH=gateway .venv/bin/python -m unittest discover -s tests -p 'test_gateway*.py' -v",
+  "tests_run": 30,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "status": "PASS",
+  "duration_ms": 3126,
+  "hardware_validation": "NOT_RUN",
+  "live_provider_validation": "NOT_RUN",
+  "production_mutations": "NOT_RUN",
+  "real_tcp_http_simulator": "PASS",
+  "dashboard_dom_race_regression": "PASS",
+  "source_sha256": {
+    "gateway/clikvm/__init__.py": "0233ebbaf59e0dac29e27629a8add5b05e09a4768aaa4a76c21a921ec00a4bff",
+    "gateway/clikvm/app.py": "3ce4ff4f5f62eec65c981c6b757f961eff9b6c1b2747105b9e21d5c4715f00a0",
+    "gateway/clikvm/audit.py": "062946e9c7308bd53403e552bbc225a3dbd73457ea26bc3af10dc6e68b47fc40",
+    "gateway/clikvm/cli.py": "6341b7ead78b168b327c058dfdb2d645193f336690fe950bacc66c420474c017",
+    "gateway/clikvm/config.py": "0ce8996e87bca8ec3d8fb02be82939226c9f114ec55016d686b7fec445ac5335",
+    "gateway/clikvm/models.py": "8b8602599b02b9b1117e952e43efa764bb650175edae92266007632f069b694c",
+    "gateway/clikvm/store.py": "e86d82040e9ccdf1998a55e0c6b2e76ff219a20f415207b39adbe1c876fcd14b",
+    "gateway/clikvm/upstream.py": "b88541d9e6cee772ab4e1115b4aaba8d9025d650f29bec9dd5dd423517df2e33",
+    "gateway/clikvm/static/app.js": "03ed75429f8fe0969b152a7e8cdd7f7009da42e0e8032becf2317e16914d7774",
+    "gateway/clikvm/static/index.html": "72fe7251e50b34461965983b37734f08763e0dc9a131ec4274b34900806fec35",
+    "gateway/clikvm/static/style.css": "1c490832282b3045d61461d242f0279c00402866e64414d26af8d71b6f024259",
+    "tests/gateway_ui_race.cjs": "bde69e9e29f4e3e4544eb161cf7e6f2dd98fc2c2842f047a881680c22412ba63",
+    "tests/test_gateway.py": "4ee5aaac23edc436fd1439e108cb56354dfc522c8135eef99c4a5ce5e0bb97b8",
+    "tests/test_gateway_http.py": "dba5ea11025be3cdc62ca8761a8520a4d2f99b752cb87f671a294e73dd36f25d",
+    "tests/test_gateway_ui.py": "b34ef506432380da5ba56fa3e7ca2716978bda5420877c9455392d3eb803f531"
+  },
+  "notes": [
+    "Synthetic device uses real TCP/HTTP; it does not emulate electrical USB or Android.",
+    "Provider request tests use deterministic HTTP transport mocks.",
+    "Official wellmanifest audit envelopes validated; row projections rebuilt and compared exactly."
+  ]
+}

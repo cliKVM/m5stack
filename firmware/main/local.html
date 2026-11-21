@@ -1,0 +1,31 @@
+<!doctype html><html lang="pl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>clikVM · hey Asa</title><style>
+:root{color-scheme:dark;font:16px system-ui;background:#191416;color:#f5f2ef}body{max-width:850px;margin:auto;padding:28px}header{display:flex;justify-content:space-between;align-items:center}h1{font-size:30px}b,.dot{color:#ff5733}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}section{background:#242023;border:1px solid #4a4246;border-radius:18px;padding:22px}h2{font-size:18px;margin-top:0}label{display:block;margin:12px 0 5px}input,textarea,button{font:inherit;border:1px solid #6c6066;background:#171315;color:inherit;border-radius:9px;padding:10px;box-sizing:border-box}input,textarea{width:100%}button{cursor:pointer;margin:5px 3px 0 0;background:#322a2e}button.primary{background:#ff5733;color:#160e0c;border-color:#ff5733;font-weight:700}button:hover{border-color:#ff5733}#pad{height:145px;background:#171315;border:1px dashed #76696f;border-radius:12px;display:grid;place-items:center;touch-action:none;margin-top:14px;user-select:none}small,p{line-height:1.5;color:#d5cbd0}pre{white-space:pre-wrap;word-break:break-word;font-size:13px}#setup{display:none}#log{min-height:35px} @media(max-width:620px){.grid{grid-template-columns:1fr}body{padding:16px}}
+</style><header><h1><b>●</b> hey Asa <small>/ clikVM</small></h1><span id="state">Łączenie…</span></header>
+<p>Kontroler Androida. Uruchom port hosta przyciskiem lub dotknięciem ekranu urządzenia, po podłączeniu telefonu i właściwego zasilania.</p>
+<section><label>Kod z ekranu kontrolera</label><input id="key" type="password" autocomplete="off" placeholder="Kod lokalnego sterowania"><pre id="log" aria-live="polite"></pre></section>
+<section id="setup"><h2>Pierwsza konfiguracja</h2><p>Wprowadź adres własnego serwera clikVM. Do testu LAN przez HTTP potrzebna jest opcja deweloperska w firmware.</p>
+<label>Sieć Wi-Fi</label><input id="ssid" maxlength="32"><label>Hasło Wi-Fi</label><input id="password" type="password" maxlength="64">
+<label>Adres serwera HTTPS</label><input id="base_url" placeholder="https://twoj-serwer.example"><label>ID urządzenia</label><input id="device_id" value="cores3-01" maxlength="63">
+<label>Token tego urządzenia</label><input id="device_token" type="password" autocomplete="off"><button class="primary" id="save">Zapisz i połącz</button></section>
+<div class="grid" id="controls"><section><h2>01 · Klawiatura AOA</h2><p>Pomoc w nawigacji przed uruchomieniem ADB. Patrz na ekran telefonu.</p>
+<button data-key="43">Tab</button><button data-key="40">Enter</button><button data-key="41">Esc</button><button data-key="42">Backspace</button><br>
+<button data-key="82">↑</button><button data-key="80">←</button><button data-key="81">↓</button><button data-key="79">→</button><button id="address">Ctrl+L</button>
+</section><section><h2>02 · Mysz AOA</h2><div id="pad">Przesuwaj palcem lub myszą</div><button id="click">Kliknięcie</button><button id="up">Przewiń ↑</button><button id="down">Przewiń ↓</button></section>
+<section><h2>03 · Zadanie</h2><textarea id="intent" rows="3" placeholder="Otwórz ustawienia telefonu"></textarea><button class="primary" id="send">Wykonaj</button><button id="capture">Nowy zrzut</button><button id="voice">Nagraj głos</button><p>Zadania wymagają autoryzowanego ADB i skonfigurowanego serwera. Nagranie trwa tyle, ile ustawiono w firmware.</p></section>
+<section><h2>04 · Stan</h2><pre id="details"></pre><button id="pause">Wstrzymaj</button><button id="resume">Wznów</button><p>PIN, debugowanie USB i zaufanie do klucza ADB potwierdzasz na swoim telefonie. Ten panel nie otrzymuje obrazu przed ADB.</p></section></div>
+<script>
+const el=id=>document.getElementById(id);let setup=false,busy=false,lastX=0,lastY=0;
+async function call(path,data){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Control-Key':el('key').value},body:JSON.stringify(data)});let v=await r.json();if(!r.ok)throw Error(v.error||r.status);return v}
+async function run(path,data){try{await call(path,data);el('log').textContent='Polecenie przyjęte.'}catch(e){el('log').textContent=e.message}}
+async function status(){try{let r=await fetch('/api/status');let s=await r.json();setup=s.provisioning;el('state').textContent=s.usb;el('setup').style.display=setup?'block':'none';el('controls').style.display=setup?'none':'grid';el('details').textContent=JSON.stringify(s,null,2)}catch(e){el('state').textContent='Brak połączenia'}}
+document.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>run('/api/km',{type:'key',usage:Number(b.dataset.key),modifier:0}));
+el('address').onclick=()=>run('/api/km',{type:'key',usage:15,modifier:1});
+el('click').onclick=()=>run('/api/km',{type:'click'});el('up').onclick=()=>run('/api/km',{type:'mouse',dx:0,dy:0,wheel:1});el('down').onclick=()=>run('/api/km',{type:'mouse',dx:0,dy:0,wheel:-1});
+el('pad').onpointerdown=e=>{el('pad').setPointerCapture(e.pointerId);lastX=e.clientX;lastY=e.clientY};
+el('pad').onpointermove=async e=>{if(!el('pad').hasPointerCapture(e.pointerId)||busy)return;let dx=Math.max(-100,Math.min(100,Math.round(e.clientX-lastX))),dy=Math.max(-100,Math.min(100,Math.round(e.clientY-lastY)));lastX=e.clientX;lastY=e.clientY;if(!dx&&!dy)return;busy=true;await run('/api/km',{type:'mouse',dx,dy,wheel:0});busy=false};
+for(let name of ['capture','voice','pause','resume'])el(name).onclick=()=>run('/api/request',{type:name});
+el('send').onclick=()=>run('/api/request',{type:'intent',text:el('intent').value});
+el('save').onclick=()=>run('/api/configure',Object.fromEntries(['ssid','password','base_url','device_id','device_token'].map(k=>[k,el(k).value])));
+status();setInterval(status,3000);
+</script></html>

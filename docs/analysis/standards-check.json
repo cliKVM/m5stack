@@ -1,0 +1,13 @@
+{
+  "schema": "clikvm.standards-check/v1",
+  "ok": true,
+  "checks": [
+    "pinned-contract-digests",
+    "wellman-requirement-registration",
+    "poa.operation/v1-and-model-source-binding",
+    "poa.process/v1",
+    "wellmanifest.logs/event/v1-example"
+  ],
+  "events_checked": 0,
+  "scope": "offline extracted contracts and producer output; no fleet certification or hardware attestation"
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "clikvm.firmware-validation/v1",
+  "idf_version": "5.4.2",
+  "status": "PASS",
+  "hardware_validation": "NOT_RUN",
+  "generated_at": "2026-11-21T16:27:21.493278+00:00",
+  "builds": [
+    {
+      "profile": "cores3",
+      "status": "PASS",
+      "binary_bytes": 1170000,
+      "sha256": "ac379494ef3953ad081cc436ed2ca15caae7bf635299571cef0c2a39d4fd94ac",
+      "warnings": [],
+      "log": "docs/analysis/build-logs/cores3.log",
+      "hardware_validated": false
+    },
+    {
+      "profile": "lcd154",
+      "status": "PASS",
+      "binary_bytes": 1169600,
+      "sha256": "994e9e839c3407828bf66fd0bf9126186f7b890a24d4adf784dc27350534447c",
+      "warnings": [],
+      "log": "docs/analysis/build-logs/lcd154.log",
+      "hardware_validated": false
+    },
+    {
+      "profile": "lcd154-touch",
+      "status": "PASS",
+      "binary_bytes": 1169776,
+      "sha256": "1adf0d857dfb15daa0dd7bfdf2d224855df2cfa9bf8e28e8f305b2a309e6e94e",
+      "warnings": [],
+      "log": "docs/analysis/build-logs/lcd154-touch.log",
+      "hardware_validated": false
+    },
+    {
+      "profile": "smoke-tts-battery-lan",
+      "status": "PASS",
+      "binary_bytes": 1171792,
+      "sha256": "39e18758b130c0234c19bc85e6a570cde092a8871278732f056b97d8b9a1c3a5",
+      "warnings": [],
+      "log": "docs/analysis/build-logs/smoke-tts-battery-lan.log",
+      "hardware_validated": false
+    }
+  ],
+  "firmware_source_sha256": {
+    "firmware/CMakeLists.txt": "a9fe5c521fc599742b5cdb00986dcc159feaa472624ca57b1abece5664478138",
+    "firmware/boards/cores3.defaults": "4bbcb8e78d246b52eb68815d902e77ca1c37d03dd102f6152b8e77d2580db28b",
+    "firmware/boards/lcd154-touch.defaults": "6e66ff06cc362a31622aa4d5e44912ea84d67cd5954cc733636195bf14322149",
+    "firmware/boards/lcd154.defaults": "2b49ce5955a7cf5a2f14267a557ca4bf9e278df2ce80384bfa1fd198ef412dd8",
+    "firmware/components/clik_board/CMakeLists.txt": "e314e4b2a566debae7fc6d1f2ba44e0e1522d844cd3cb6f1cb958fe03b73762d",
+    "firmware/components/clik_board/board_private.h": "a1d0066f6f5db70ddb96ed0560d113c5c5f0a45b85ef8c9ced159221bb704715",
+    "firmware/components/clik_board/clik_audio.c": "92dc9112c8acb902a28dc8e75e4f398fef2c595a19402b9519fb15aceb0fec04",
+    "firmware/components/clik_board/clik_board.c": "717ffe6dddd8cb41de3007031c3c0e73761e2d1b98467453373ec86f2e39a1a8",
+    "firmware/components/clik_board/font5x7.h": "9d662f469a808444b3f1d28c3c70cc77fa19d843c27b6f6c40955266d869e7c1",
+    "firmware/components/clik_board/idf_component.yml": "3f98b14e79d707e9709749f550dca4e80fedbc75e3c7d74aaf8fcb5668673fd4",
+    "firmware/components/clik_board/ili9342e_init_cmds.h": "baedb3cf0f95bd95bdd36dfbed98cba4ecb906c60bb334601a1c29e4264cae7f",
+    "firmware/components/clik_board/include/clik_board.h": "e6f9d050d7236a254f265aa7b41d2a868644fb83213ee16aff05c3cad1967e81",
+    "firmware/components/clik_cloud/CMakeLists.txt": "ae37ddb87d1271034c91c715394b7774d2467a72957372f3f9a03e0988ba1bad",
+    "firmware/components/clik_cloud/clik_cloud.c": "7e4c4a4c8af7a2e89893c2f80e07a6a5380e39addbc7843405b4ff62c2765351",
+    "firmware/components/clik_cloud/include/clik_cloud.h": "2ce825c213d0d2dedb28eecff693d1c89d1feba7560ccbe03a74ba00069e118c",
+    "firmware/components/clik_protocol/CMakeLists.txt": "84eb5f2b4791a94fe7a03af30500193d8ae2a613e004e716d96ed0d84e86d0c6",
+    "firmware/components/clik_protocol/clik_protocol.c": "2f2d32cc7b46a57b6a8cf040c306ae242ca0e72c6eb2b2675574ca2f76a3b132",
+    "firmware/components/clik_protocol/include/clik_protocol.h": "8be0fd00161187df99c8703876c33da2c81ae885fe46e8b39cd3454a669a7940",
+    "firmware/components/clik_usb/CMakeLists.txt": "22959567a49decacca4e8387fc6b854fd85fea3c6c5b8093aed92b1acf1853a5",
+    "firmware/components/clik_usb/README.md": "00387ac219c6ae872f1d8371b9258777b95e583ccf1776c1a6b36808eab9b7e9",
+    "firmware/components/clik_usb/clik_adb_auth.c": "11b46893fa176b9aeb38ac9bfc7df1920fa16546956b17eef62ba5ef4dee50e7",
+    "firmware/components/clik_usb/clik_adb_auth.h": "182ae9583a70053df3a455b83784563c6133ce11c1f9cb5c96f7ca917bcf0c92",
+    "firmware/components/clik_usb/clik_usb.c": "83d9e3b08b7599b4bd6c4497c2b54dd5153d38ba6801e3d00ec50a419727b046",
+    "firmware/components/clik_usb/include/clik_usb.h": "f3921631e6b06a6c70c9fa06fce3431122901b4ad41c6d1f92e2395aa23ac15e",
+    "firmware/dependencies.lock": "3907a51723ae36cf36420d9271007f3a37c5b6335e8c1ac9d0c9d07c727d7c8e",
+    "firmware/main/CMakeLists.txt": "3bb3ad9d5007ef55dcc2bf9e85fbf38d7a11eb478490dc5807b7d478f82a296d",
+    "firmware/main/Kconfig.projbuild": "2c50226845c77eb22be11e42d28f25e83bb4e55bc512c152b2eecb04977ca9df",
+    "firmware/main/app.h": "7eab2a7e066c4ce7361283e00fe382a0e3598d9f0c32b410ffe9310550928adb",
+    "firmware/main/local.html": "b985a5cce00f0eac0598c7a4e4ab6dbbbe76d97b9bcd8a6cee1718df9586ee22",
+    "firmware/main/main.c": "42e3c4f31ebb1b688adb2bdbfe217d5481ccc4395abef3ad029ee1eb31f9a8fc",
+    "firmware/main/provision.c": "3ad41231111384469acbae04a626c15207bdd95c5b846c9e1c1f144cc4723d07",
+    "firmware/partitions.csv": "53d3f063f0fd8a23a5438bd6d82d08c65a54d937164cc6917bf35298de440ebc",
+    "firmware/sdkconfig.defaults": "30cb3e58e82405f117c2d7e1aa53d96df530ba3baead12eb4c2f53dc1277978a"
+  }
+}
